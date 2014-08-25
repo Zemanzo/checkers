@@ -104,6 +104,12 @@
 			board.size = 10;
 			board.currentPlayer = "white";
 			board.turns = 0;
+			board.black = {};
+			board.white = {};
+			board.black.currentPieces = 0;
+			board.white.currentPieces = 0;
+			board.black.lostPieces = 0;
+			board.white.lostPieces = 0;
 			
 			function init(){
 				// Create board
@@ -142,9 +148,12 @@
 					var pieceSet;
 					for (i = 0; i < board.size; i++){
 						if (offset == 1){
-							var pieceSet = ( (Math.abs(isEven(i)-1) == 1) ? color : "null");
+							pieceSet = ( (Math.abs(isEven(i)-1) == 1) ? color : "null");
 						} else {
-							var pieceSet = ( ( isEven(i) == 1 ) ? color : "null");
+							pieceSet = ( ( isEven(i) == 1 ) ? color : "null");
+						}
+						if (pieceSet != "null"){
+							board[color].currentPieces += 1;
 						}
 						board.pieces[rows][i] = {};
 						board.pieces[rows][i].type = pieceSet;
@@ -188,14 +197,13 @@
 											} else if (board.pieces[x+a][y+b].type == "white"){
 												checkForHits(x+(a*2),y+(b*2),"white",x+a,y+b);
 											}
-										} /*else if (type == "white"){									// Regular white pieces
-											if (board.pieces[x-1][y-1].type == "null"){
-												colorCell(x-1,y-1,null,"moveSimple");
+										} else if (type == "white"){									// Regular white pieces
+											if (board.pieces[x+a][y+b].type == "null"){
+												colorCell(x+a,y+b,null,"moveSimple");
+											} else if (board.pieces[x+a][y+b].type == "black"){
+												checkForHits(x+(a*2),y+(b*2),"white",x+a,y+b);
 											}
-											if (board.pieces[x-1][y+1].type == "null"){
-												colorCell(x-1,y+1,null,"moveSimple");
-											}
-										}*/
+										}
 									}
 								}
 							}
