@@ -14,6 +14,11 @@ board.cellSize = (window.innerHeight-70)/(board.size);	// Determine height and w
 function init(){
 	// Create board
 	board.container = document.getElementById("checkersContainer");
+	board.container.style.marginLeft = "-"+(board.cellSize*board.size)/2+"px"; // Center it
+	
+	// Fit header to board
+	document.getElementById("header").style.width = (board.cellSize*board.size)+"px";
+	document.getElementById("header").style.marginLeft = "-"+(board.cellSize*board.size)/2+"px"; // Center it
 	
 	// Write custom style to support variable window sizes
 	var customStyle = document.createElement("style");
@@ -65,16 +70,16 @@ function startSetup(rowStart,rowEnd,color){
 	var offset;
 	for (rows = rowStart; rows < rowEnd; rows++){
 		board.pieces[rows] = {};
-		offset = isEven(rows);
+		offset = isEven(rows); // isEven(1) == 0 and isEven(2) == 1
 		var pieceSet;
 		for (i = 0; i < board.size; i++){
-			if (offset == 1){
-				pieceSet = ( (Math.abs(isEven(i)-1) == 1) ? color : "null");
-			} else {
-				pieceSet = ( ( isEven(i) == 1 ) ? color : "null");
+			if (offset == 1){	// If row is an even row
+				pieceSet = ( (Math.abs(isEven(i)-1) == 1) ? color : "null"); // Place a piece where the cell is even where type is color, else place nothing
+			} else {			// If row is NOT an even row
+				pieceSet = ( ( isEven(i) == 1 ) ? color : "null"); // Place a piece where the cell is uneven where type is color, else place nothing
 			}
 			if (pieceSet != "null"){
-				board[color].currentPieces += 1;
+				board[color].currentPieces += 1; // Add piece piececount per color.
 			}
 			
 			// Set up pieces in board.pieces object
@@ -151,7 +156,7 @@ function clearMoveset(){
 	}
 }
 
-function getMoveset(x,y,type){
+function getMoveset(x,y,type){										// DEPRECATED -- USE board.pieces[x][y].getMoveset() INSTEAD
 	clearMoveset()
 	
 	var p = "piece-"+x+"_"+y;
