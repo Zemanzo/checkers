@@ -94,6 +94,7 @@ function startSetup(rowStart,rowEnd,color){
 			board.pieces[rows][i].position = {};
 			board.pieces[rows][i].position.x = rows;
 			board.pieces[rows][i].position.y = i;
+			board.pieces[rows][i].currentPaths = [];
 			board.pieces[rows][i].selectPiece = function(){
 				//console.log(this);
 				var x = this.position.x;
@@ -105,7 +106,7 @@ function startSetup(rowStart,rowEnd,color){
 				if ( (typeof(selected) == "undefined" || selected == "null") && type == board.currentPlayer) {	// Nothing is selected, clicked one will be selected
 					selected = selectedId;
 					selectedPiece.style.border = "4px solid #f00";
-					getMoveset(x,y,type);
+					board.pieces[x][y].getMoveset();
 				} else if (selected == selectedId) {															// Same pieces is selected, thus a deselect is performed
 					selected = "null";
 					selectedPiece.style.border = "none";
@@ -114,7 +115,7 @@ function startSetup(rowStart,rowEnd,color){
 					document.getElementById(selected).style.border = "none";
 					selected = selectedId;
 					selectedPiece.style.border = "4px solid #f00";
-					getMoveset(x,y,type);
+					board.pieces[x][y].getMoveset();
 				}
 			};
 			board.pieces[rows][i].getMoveset = function(){
@@ -122,24 +123,39 @@ function startSetup(rowStart,rowEnd,color){
 				var x = this.position.x;
 				var y = this.position.y;
 				var type = this.type;
-				for (a = -1; a < 1.1; a += 2){
-					for (b = -1; b < 1.1; b += 2){
+				var possibleHits = [];
+				for (a = -1; a <= 1; a += 2){				// Look around the current piece
+					for (b = -1; b <= 1; b += 2){			// for pieces of the other type (
 						if (typeof(board.pieces[x+a][y+b]) != "undefined"){					// Check if next position is not out of bounds
+							//colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
 							if (type == "black"){											// Regular black pieces
-								if (board.pieces[x+a][y+b].type == "null"){
-									colorCell(x+a,y+b,null,"moveSimple");
-								} else if (board.pieces[x+a][y+b].type == "white"){
-									checkForHits(x+(a*2),y+(b*2),"white",x+a,y+b);
+								if (board.pieces[x+a][y+b].type == "null" && a > 0){			// If an empty cell is found...
+									colorCell(x+a,y+b,null,"moveSimple");						// Color it blue (and addeventlistener etc. etc.)
+								} else if (board.pieces[x+a][y+b].type == "white"){				// If a piece of the other type is found
+									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
+										if (board.pieces[x+a*2][y+b*2].type == "null"){				// Check if "landing cell" is empty
+											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
+										}
+									}
 								}
 							} else if (type == "white"){									// Regular white pieces
-								if (board.pieces[x+a][y+b].type == "null"){
+								if (board.pieces[x+a][y+b].type == "null" && a < 0){						// Same goes for white as for black ^
 									colorCell(x+a,y+b,null,"moveSimple");
 								} else if (board.pieces[x+a][y+b].type == "black"){
-									checkForHits(x+(a*2),y+(b*2),"white",x+a,y+b);
+									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){
+										if (board.pieces[x+a*2][y+b*2].type == "null"){
+											possibleHits.push((x+a)+"_"+(y+b));
+										}
+									}
 								}
 							}
 						}
 					}
+				}
+				console.log(possibleHits);
+				for (i = 0; i < possibleHits.length; i++){
+					this.currentPaths[i].push([]);
+					
 				}
 			}
 		}
