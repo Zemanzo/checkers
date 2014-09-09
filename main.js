@@ -118,34 +118,42 @@ function startSetup(rowStart,rowEnd,color){
 					board.pieces[x][y].getMoveset();
 				}
 			};
-			board.pieces[rows][i].getMoveset = function(){
+			board.pieces[rows][i].getMoveset = function(){	// Function to get moveset
 				clearMoveset();
 				var x = this.position.x;
 				var y = this.position.y;
 				var type = this.type;
 				var possibleHits = [];
+				
+				function getType(){				// "black" returns true, "white" returns false, anything else returns "null"
+					if (type == "black"){
+						return true;
+					} else if (type == "white") {
+						return false;
+					} else {
+						return "null";
+					}
+				}
+				
 				for (a = -1; a <= 1; a += 2){				// Look around the current piece
-					for (b = -1; b <= 1; b += 2){			// for pieces of the other type (
+					for (b = -1; b <= 1; b += 2){			// for pieces of the other type
 						if (typeof(board.pieces[x+a][y+b]) != "undefined"){					// Check if next position is not out of bounds
 							//colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
-							if (type == "black"){											// Regular black pieces
-								if (board.pieces[x+a][y+b].type == "null" && a > 0){			// If an empty cell is found...
-									colorCell(x+a,y+b,null,"moveSimple");						// Color it blue (and addeventlistener etc. etc.)
-								} else if (board.pieces[x+a][y+b].type == "white"){				// If a piece of the other type is found
-									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
-										if (board.pieces[x+a*2][y+b*2].type == "null"){				// Check if "landing cell" is empty
-											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
-										}
+							var antiType = ( ( getType() ) ? "white" : "black");
+							if (board.pieces[x+a][y+b].type == "null"){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
+								if (getType()){
+									if (a > 0){
+										colorCell(x+a,y+b,null,"moveSimple");
+									}
+								} else {
+									if (a < 0){
+										colorCell(x+a,y+b,null,"moveSimple");
 									}
 								}
-							} else if (type == "white"){									// Regular white pieces
-								if (board.pieces[x+a][y+b].type == "null" && a < 0){						// Same goes for white as for black ^
-									colorCell(x+a,y+b,null,"moveSimple");
-								} else if (board.pieces[x+a][y+b].type == "black"){
-									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){
-										if (board.pieces[x+a*2][y+b*2].type == "null"){
-											possibleHits.push((x+a)+"_"+(y+b));
-										}
+							} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
+								if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
+									if (board.pieces[x+a*2][y+b*2].type == "null"){				// Check if "landing cell" is empty
+										possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
 									}
 								}
 							}
@@ -153,9 +161,9 @@ function startSetup(rowStart,rowEnd,color){
 					}
 				}
 				console.log(possibleHits);
-				for (i = 0; i < possibleHits.length; i++){
+				for (i = 0; i < possibleHits.length; i++){ // Treat hits
+					console.log(currentPaths[i]);
 					this.currentPaths[i].push([]);
-					
 				}
 			}
 		}
@@ -202,7 +210,7 @@ function getMoveset(x,y,type){										// DEPRECATED -- USE board.pieces[x][y].
 
 var hitAmount;
 hitAmount = 0;
-function checkForHits(x,y,type,xprev,yprev){
+function checkForHits(x,y,type,xprev,yprev){						// DEPRECATED -- USE board.pieces[x][y].getMoveset() INSTEAD
 	if (board.pieces[x][y].type == "null"){
 		document.getElementById(xprev+"_"+yprev).style.backgroundColor = "#f90";
 		hitAmount += 1;
