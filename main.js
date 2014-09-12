@@ -82,13 +82,15 @@ function startSetup(rowStart,rowEnd,color){
 				board[color].currentPieces += 1; // Add piece piececount per color.
 			}
 			
-			// Set up pieces in board.pieces object
-			// string -- Type
-			// object -- Position (for this.position);
-			//	integer -- x
-			//	integer -- y
-			// function -- selectPiece()
-			// function -- getMoveset()
+			/*
+			Set up pieces in board.pieces object
+			string -- Type
+			object -- Position (for this.position);
+				integer -- x
+				integer -- y
+			function -- selectPiece()
+			function -- getMoveset()
+			*/
 			board.pieces[rows][i] = {};
 			board.pieces[rows][i].type = pieceSet;
 			board.pieces[rows][i].position = {};
@@ -124,6 +126,7 @@ function startSetup(rowStart,rowEnd,color){
 				var y = this.position.y;
 				var type = this.type;
 				var possibleHits = [];
+				var hitIteration = 0;
 				
 				function getType(){				// "black" returns true, "white" returns false, anything else returns "null"
 					if (type == "black"){
@@ -135,36 +138,72 @@ function startSetup(rowStart,rowEnd,color){
 					}
 				}
 				
-				for (a = -1; a <= 1; a += 2){				// Look around the current piece
-					for (b = -1; b <= 1; b += 2){			// for pieces of the other type
-						if (typeof(board.pieces[x+a][y+b]) != "undefined"){					// Check if next position is not out of bounds
-							//colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
-							var antiType = ( ( getType() ) ? "white" : "black");
-							if (board.pieces[x+a][y+b].type == "null"){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
-								if (getType()){
-									if (a > 0){
-										colorCell(x+a,y+b,null,"moveSimple");
+				function checkAround(p){
+					if (hitIteration > 0){
+						x = currentPaths[p][hitIteration-1].substring(0,1);
+						y = currentPaths[p][hitIteration-1].substring(2,3);
+					}
+					console.log(x,y,this,hitIteration,this.currentPaths,possibleHits);
+					for (a = -1; a <= 1; a += 2){				// Look around the current piece
+						for (b = -1; b <= 1; b += 2){			// for pieces of the other type
+							if (typeof(board.pieces[x+a][y+b]) != "undefined"){					// Check if next position is not out of bounds
+								//colorCell(x+a,y+b,"#9f9","debug");							// Color it greenish to show where it checked
+								var antiType = ( ( getType() ) ? "white" : "black");
+								if (board.pieces[x+a][y+b].type == "null"){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
+									if (getType()){
+										if (a > 0){
+											colorCell(x+a,y+b,null,"moveSimple");	// If type is black, moveSimple can only move DOWN
+										}
+									} else {
+										if (a < 0){
+											colorCell(x+a,y+b,null,"moveSimple");	// If type is white, moveSimple can only move UP
+										}
 									}
-								} else {
-									if (a < 0){
-										colorCell(x+a,y+b,null,"moveSimple");
-									}
-								}
-							} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
-								if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
-									if (board.pieces[x+a*2][y+b*2].type == "null"){				// Check if "landing cell" is empty
-										possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
+								} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
+									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
+										if (board.pieces[x+a*2][y+b*2].type == "null"){				// Check if "landing cell" is empty
+											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
+										}
 									}
 								}
 							}
 						}
 					}
+					if (hitIteration > 0){	// Do not process for first hit
+						for (i = 0; i < possibleHits.length; i++){ // Treat hits
+							if (i > 0){
+								var temp = [];	// New path is found, so create a new array for it
+								for (u = 0; u < hitIteration; u++){
+									temp.push(currentPaths[p][u]);
+								}
+								this.currentPaths.push(temp); // Add the new path to the full array
+							} else {
+								this.currentPaths[p][hitIteration] = possibleHits[i];
+							}
+						}
+						hitIteration++;
+						if (possibleHits > 0){
+							for (p = 0; p < this.currentPaths.length; p++){
+								checkAround(p);
+							}
+						}
+					} else {
+						console.log(possibleHits);
+						for (i = 0; i < possibleHits.length; i++){ // Treat hits
+							console.log(this,this.currentPaths);
+							this.currentPaths.push([]);
+							this.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
+						}
+						console.log(this.currentPaths);
+						hitIteration++;
+						if (possibleHits > 0){
+							for (p = 0; p < this.currentPaths.length; p++){
+								checkAround(p);
+							}
+						}
+					}
 				}
-				console.log(possibleHits);
-				for (i = 0; i < possibleHits.length; i++){ // Treat hits
-					console.log(currentPaths[i]);
-					this.currentPaths[i].push([]);
-				}
+				checkAround();
 			}
 		}
 	}
