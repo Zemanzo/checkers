@@ -125,6 +125,7 @@ function startSetup(rowStart,rowEnd,color){
 				var x = this.position.x;
 				var y = this.position.y;
 				var type = this.type;
+				var caller = this;
 				var possibleHits = [];
 				var hitIteration = 0;
 				
@@ -140,16 +141,16 @@ function startSetup(rowStart,rowEnd,color){
 				
 				function checkAround(p){
 					if (hitIteration > 0){
-						x = currentPaths[p][hitIteration-1].substring(0,1);
-						y = currentPaths[p][hitIteration-1].substring(2,3);
+						x = parseInt(caller.currentPaths[p][hitIteration-1].substring(0,1));
+						y = parseInt(caller.currentPaths[p][hitIteration-1].substring(2,3));
 					}
-					console.log(x,y,this,hitIteration,this.currentPaths,possibleHits);
+					//console.log(x,y,caller,hitIteration,caller.currentPaths,possibleHits);
 					for (a = -1; a <= 1; a += 2){				// Look around the current piece
 						for (b = -1; b <= 1; b += 2){			// for pieces of the other type
 							if (typeof(board.pieces[x+a][y+b]) != "undefined"){					// Check if next position is not out of bounds
 								//colorCell(x+a,y+b,"#9f9","debug");							// Color it greenish to show where it checked
 								var antiType = ( ( getType() ) ? "white" : "black");
-								if (board.pieces[x+a][y+b].type == "null"){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
+								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
 									if (getType()){
 										if (a > 0){
 											colorCell(x+a,y+b,null,"moveSimple");	// If type is black, moveSimple can only move DOWN
@@ -170,34 +171,38 @@ function startSetup(rowStart,rowEnd,color){
 						}
 					}
 					if (hitIteration > 0){	// Do not process for first hit
+						console.log("Iteration ",hitIteration);
 						for (i = 0; i < possibleHits.length; i++){ // Treat hits
 							if (i > 0){
 								var temp = [];	// New path is found, so create a new array for it
 								for (u = 0; u < hitIteration; u++){
 									temp.push(currentPaths[p][u]);
 								}
-								this.currentPaths.push(temp); // Add the new path to the full array
+								caller.currentPaths.push(temp); // Add the new path to the full array
 							} else {
-								this.currentPaths[p][hitIteration] = possibleHits[i];
+								caller.currentPaths[p][hitIteration] = possibleHits[i];
+								console.log("Case where only one new hit is found on this path",caller.currentPaths[p][hitIteration]);
 							}
 						}
 						hitIteration++;
-						if (possibleHits > 0){
-							for (p = 0; p < this.currentPaths.length; p++){
+						if (possibleHits.length > 0){
+							for (p = 0; p < caller.currentPaths.length; p++){
+								possibleHits = [];
 								checkAround(p);
 							}
 						}
 					} else {
-						console.log(possibleHits);
+						//console.log(possibleHits);
 						for (i = 0; i < possibleHits.length; i++){ // Treat hits
-							console.log(this,this.currentPaths);
-							this.currentPaths.push([]);
-							this.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
+							//console.log(caller,caller.currentPaths);
+							caller.currentPaths.push([]);
+							caller.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
 						}
-						console.log(this.currentPaths);
+						//console.log(caller.currentPaths);
 						hitIteration++;
-						if (possibleHits > 0){
-							for (p = 0; p < this.currentPaths.length; p++){
+						if (possibleHits.length > 0){
+							for (p = 0; p < caller.currentPaths.length; p++){
+								possibleHits = [];
 								checkAround(p);
 							}
 						}
@@ -219,33 +224,6 @@ function clearMoveset(){
 	}
 }
 
-function getMoveset(x,y,type){										// DEPRECATED -- USE board.pieces[x][y].getMoveset() INSTEAD
-	clearMoveset()
-	
-	var p = "piece-"+x+"_"+y;
-	if (type == "black"){											// Regular black pieces
-		if (board.pieces[x+1][y-1].type == "null"){
-			colorCell(x+1,y-1,null,"moveSimple");
-		} else if (board.pieces[x+1][y-1].type == "white"){
-			checkForHits(x+2,y-2,"white",x+1,y-1)
-		}
-		
-		if (board.pieces[x+1][y+1].type == "null"){
-			colorCell(x+1,y+1,null,"moveSimple");
-		} else if (board.pieces[x+1][y+1].type == "white"){
-			checkForHits(x+2,y+2,"white",x+1,y+1)
-		}
-		
-		
-	} else if (type == "white"){									// Regular white pieces
-		if (board.pieces[x-1][y-1].type == "null"){
-			colorCell(x-1,y-1,null,"moveSimple");
-		}
-		if (board.pieces[x-1][y+1].type == "null"){
-			colorCell(x-1,y+1,null,"moveSimple");
-		}
-	}
-}
 
 var hitAmount;
 hitAmount = 0;
