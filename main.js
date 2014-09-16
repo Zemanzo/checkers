@@ -1,3 +1,5 @@
+/* Checkers by Zemanzo - 2014 */
+
 var selected;
 var board = {};
 board.size = 10;				// Grid size (10 is default by international checkers rules)
@@ -121,12 +123,14 @@ function startSetup(rowStart,rowEnd,color){
 				}
 			};
 			board.pieces[rows][i].getMoveset = function(){	// Function to get moveset
+				console.log("%c Getting new moveset ","border-left:rgb(255,0,0) 3px solid; background-color:rgba(255,0,0,.5);");
 				clearMoveset();
 				var x = this.position.x;
 				var y = this.position.y;
 				var type = this.type;
 				var caller = this;
 				var possibleHits = [];
+				var nextMove = [];
 				var hitIteration = 0;
 				
 				function getType(){				// "black" returns true, "white" returns false, anything else returns "null"
@@ -140,15 +144,16 @@ function startSetup(rowStart,rowEnd,color){
 				}
 				
 				function checkAround(p){
+					colorCell(x,y,"#f90","debug");
 					if (hitIteration > 0){
-						x = parseInt(caller.currentPaths[p][hitIteration-1].substring(0,1));
-						y = parseInt(caller.currentPaths[p][hitIteration-1].substring(2,3));
+						console.log(nextMove[p])
+						x = nextMove[p].x;
+						y = nextMove[p].y;
 					}
 					//console.log(x,y,caller,hitIteration,caller.currentPaths,possibleHits);
 					for (a = -1; a <= 1; a += 2){				// Look around the current piece
 						for (b = -1; b <= 1; b += 2){			// for pieces of the other type
 							if (typeof(board.pieces[x+a][y+b]) != "undefined"){					// Check if next position is not out of bounds
-								//colorCell(x+a,y+b,"#9f9","debug");							// Color it greenish to show where it checked
 								var antiType = ( ( getType() ) ? "white" : "black");
 								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
 									if (getType()){
@@ -161,51 +166,71 @@ function startSetup(rowStart,rowEnd,color){
 										}
 									}
 								} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
+									console.log("Piece of other type is found at: ",(x+a),(y+b));
+									colorCell(x+a,y+b,"#9f9","debug");							// Color it greenish to show where it checked
 									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
-										if (board.pieces[x+a*2][y+b*2].type == "null"){				// Check if "landing cell" is empty
+										function addHitToList(){
 											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
+											nextMove.push({											// Another array for the position of the next iteration
+												x:(x+a*2),
+												y:(y+b*2)
+											});
+										}
+										//console.log("Check if cell is free to land on: ",board.pieces[x+a*2][y+b*2]);
+										console.log("Checking for path: ",p," and for iteration: ",hitIteration);
+										if (board.pieces[x+a*2][y+b*2].type == "null"){ // Check if "landing cell" is empty
+											if (hitIteration == 0){	// First iteration, don't have to worry for dupes
+												addHitToList();
+											} else if (board.pieces[x+a*2][y+b*2].type == "null" && caller.currentPaths[p].indexOf((x+a)+"_"+(y+b)) == -1){ 	// Make sure the piece it's hitting is NOT already in the current path.
+												addHitToList();
+											}
 										}
 									}
 								}
 							}
 						}
 					}
-					if (hitIteration > 0){	// Do not process for first hit
-						console.log("Iteration ",hitIteration);
-						for (i = 0; i < possibleHits.length; i++){ // Treat hits
-							if (i > 0){
-								var temp = [];	// New path is found, so create a new array for it
+					function nextCheckAround(){
+						hitIteration++;
+						console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
+						if (possibleHits.length > 0){
+							//console.log("Current paths: ",caller.currentPaths);
+							for (p = 0; p < caller.currentPaths.length; p++){
+								possibleHits = [];
+								console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
+								checkAround(p);
+							}
+						} else {
+							console.log("No new hits are found");
+						}
+					}
+					if (hitIteration > 0){								// If more hits are found after the first one
+						for (i = 0; i < possibleHits.length; i++){		// Treat hits
+							if (i > 0){									// If there's more than one hit, a new path is found
+								var temp = [];							// New path is found, so create a new array for it, and fill it with all previous hits
 								for (u = 0; u < hitIteration; u++){
 									temp.push(currentPaths[p][u]);
 								}
-								caller.currentPaths.push(temp); // Add the new path to the full array
-							} else {
+								caller.currentPaths.push(temp);			// Add the new path to the full array
+							} else {									// If only one hit is found, add it to the current path.
 								caller.currentPaths[p][hitIteration] = possibleHits[i];
-								console.log("Case where only one new hit is found on this path",caller.currentPaths[p][hitIteration]);
 							}
 						}
-						hitIteration++;
-						if (possibleHits.length > 0){
-							for (p = 0; p < caller.currentPaths.length; p++){
-								possibleHits = [];
-								checkAround(p);
-							}
-						}
-					} else {
-						//console.log(possibleHits);
-						for (i = 0; i < possibleHits.length; i++){ // Treat hits
-							//console.log(caller,caller.currentPaths);
+						nextCheckAround();
+					} else {											// Only for the first hit
+						for (i = 0; i < possibleHits.length; i++){		// Treat hits
 							caller.currentPaths.push([]);
 							caller.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
 						}
-						//console.log(caller.currentPaths);
-						hitIteration++;
+						/*hitIteration++;
 						if (possibleHits.length > 0){
+							console.log("Next iteration ("+hitIteration+")");
 							for (p = 0; p < caller.currentPaths.length; p++){
 								possibleHits = [];
 								checkAround(p);
 							}
-						}
+						}*/
+						nextCheckAround();
 					}
 				}
 				checkAround();
