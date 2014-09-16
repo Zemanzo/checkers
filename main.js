@@ -143,9 +143,9 @@ function startSetup(rowStart,rowEnd,color){
 					}
 				}
 				
-				function checkAround(p){
+				function checkAround(p,fp){
 					colorCell(x,y,"#f90","debug");
-					if (hitIteration > 0){
+					if (hitIteration > 0){			// On any iteration other than the first, look from another cell than the initial one!
 						console.log(nextMove[p])
 						x = nextMove[p].x;
 						y = nextMove[p].y;
@@ -167,7 +167,7 @@ function startSetup(rowStart,rowEnd,color){
 									}
 								} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
 									console.log("Piece of other type is found at: ",(x+a),(y+b));
-									colorCell(x+a,y+b,"#9f9","debug");							// Color it greenish to show where it checked
+									colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
 									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
 										function addHitToList(){
 											console.log("Adding ",x+a,y+b," to the current hits");
@@ -191,16 +191,17 @@ function startSetup(rowStart,rowEnd,color){
 							}
 						}
 					}
-					function nextCheckAround(){
-						if (p == fp){
+					function nextCheckAround(fp){
+						console.log(p,fp);
+						if (p == fp){ // If this is the last path we're checking, add 1 to the hitIteration
 							hitIteration++;
 							console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
 						}
+						console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
 						if (possibleHits.length > 0){
 							//console.log("Current paths: ",caller.currentPaths);
 							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
 								possibleHits = [];
-								console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
 								var fp = caller.currentPaths.length-1;
 								checkAround(p,fp);
 							}
@@ -220,13 +221,13 @@ function startSetup(rowStart,rowEnd,color){
 								caller.currentPaths[p][hitIteration] = possibleHits[i];
 							}
 						}
-						nextCheckAround();
+						nextCheckAround(fp);
 					} else {											// Only for the first hit
 						for (i = 0; i < possibleHits.length; i++){		// Treat hits
 							caller.currentPaths.push([]);
 							caller.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
 						}
-						nextCheckAround();
+						nextCheckAround(fp);
 					}
 				}
 				checkAround();
