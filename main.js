@@ -170,6 +170,7 @@ function startSetup(rowStart,rowEnd,color){
 									colorCell(x+a,y+b,"#9f9","debug");							// Color it greenish to show where it checked
 									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
 										function addHitToList(){
+											console.log("Adding ",x+a,y+b," to the current hits");
 											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
 											nextMove.push({											// Another array for the position of the next iteration
 												x:(x+a*2),
@@ -177,7 +178,7 @@ function startSetup(rowStart,rowEnd,color){
 											});
 										}
 										//console.log("Check if cell is free to land on: ",board.pieces[x+a*2][y+b*2]);
-										console.log("Checking for path: ",p," and for iteration: ",hitIteration);
+										//console.log("Checking for path: ",p," and for iteration: ",hitIteration);
 										if (board.pieces[x+a*2][y+b*2].type == "null"){ // Check if "landing cell" is empty
 											if (hitIteration == 0){	// First iteration, don't have to worry for dupes
 												addHitToList();
@@ -191,14 +192,17 @@ function startSetup(rowStart,rowEnd,color){
 						}
 					}
 					function nextCheckAround(){
-						hitIteration++;
-						console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
+						if (p == fp){
+							hitIteration++;
+							console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
+						}
 						if (possibleHits.length > 0){
 							//console.log("Current paths: ",caller.currentPaths);
-							for (p = 0; p < caller.currentPaths.length; p++){
+							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
 								possibleHits = [];
 								console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
-								checkAround(p);
+								var fp = caller.currentPaths.length-1;
+								checkAround(p,fp);
 							}
 						} else {
 							console.log("No new hits are found");
@@ -222,14 +226,6 @@ function startSetup(rowStart,rowEnd,color){
 							caller.currentPaths.push([]);
 							caller.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
 						}
-						/*hitIteration++;
-						if (possibleHits.length > 0){
-							console.log("Next iteration ("+hitIteration+")");
-							for (p = 0; p < caller.currentPaths.length; p++){
-								possibleHits = [];
-								checkAround(p);
-							}
-						}*/
 						nextCheckAround();
 					}
 				}
@@ -246,31 +242,6 @@ function clearMoveset(){
 		document.getElementById(coloredCells[i]).style.backgroundColor = "#630";
 		document.getElementById(coloredCells[i]).style.cursor = "auto";
 		document.getElementById(coloredCells[i]).removeEventListener("click", movePiece);
-	}
-}
-
-
-var hitAmount;
-hitAmount = 0;
-function checkForHits(x,y,type,xprev,yprev){						// DEPRECATED -- USE board.pieces[x][y].getMoveset() INSTEAD
-	if (board.pieces[x][y].type == "null"){
-		document.getElementById(xprev+"_"+yprev).style.backgroundColor = "#f90";
-		hitAmount += 1;
-		var customColor = "#f"+(hitAmount*2)+""+(hitAmount*2);
-		colorCell(x,y,customColor,"hit");
-		for (beep = -1; beep < 1.1; beep += 2){
-			for (boop = -1; boop < 1.1; boop += 2){
-				if ((x+beep != xprev) || (y+boop != yprev)){
-					//console.log(beep,boop)
-					colorCell(x+beep,y+boop,"#9f9","debug"); // Check around for other possible hits [GREEN]
-				}
-				if ((board.pieces[x+beep][y+boop] == type) && (x+beep != xprev) || (y+boop != yprev) ){
-					checkForHits(x+beep*2,y+boop*2,type,x+beep,y+boop);
-					//console.log(x,y,beep,boop,x+beep,y+boop);
-					//document.getElementById((x+beep)+"_"+(y+boop)).style.backgroundColor = "#9f9"; // Check around for other possible hits [GREEN]
-				}
-			}
-		}
 	}
 }
 
@@ -320,6 +291,14 @@ function move(col,e){
 			movedPiece.dataset.type = col+"King";
 		} else {
 			movedPiece.dataset.type = col;
+		}
+		// Clean up
+		for (x = 0; x < board.size; x++){
+			for (y = 0; y < board.size; y++){
+				if (board.pieces[x][y].type != "null"){
+					board.pieces[x][y].currentPaths = [];
+				}
+			}
 		}
 		clearMoveset();
 		selected = "null";
