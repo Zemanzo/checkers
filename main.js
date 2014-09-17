@@ -144,9 +144,11 @@ function startSetup(rowStart,rowEnd,color){
 				}
 				
 				function checkAround(p,fp){
+					console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
+					console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
 					colorCell(x,y,"#f90","debug");
 					if (hitIteration > 0){			// On any iteration other than the first, look from another cell than the initial one!
-						console.log(nextMove[p])
+						//console.log(nextMove[p])
 						x = nextMove[p].x;
 						y = nextMove[p].y;
 					}
@@ -182,8 +184,10 @@ function startSetup(rowStart,rowEnd,color){
 										if (board.pieces[x+a*2][y+b*2].type == "null"){ // Check if "landing cell" is empty
 											if (hitIteration == 0){	// First iteration, don't have to worry for dupes
 												addHitToList();
-											} else if (board.pieces[x+a*2][y+b*2].type == "null" && caller.currentPaths[p].indexOf((x+a)+"_"+(y+b)) == -1){ 	// Make sure the piece it's hitting is NOT already in the current path.
+											} else if (board.pieces[x+a*2][y+b*2].type == "null" && caller.currentPaths[p].indexOf((x+a)+"_"+(y+b)) == -1 && typeof(p) != "undefined"){ 	// Make sure the piece it's hitting is NOT already in the current path.
 												addHitToList();
+											} else if (hitIteration != 0){
+												console.log("Found a dupe at ",(x+a),(y+b));
 											}
 										}
 									}
@@ -195,9 +199,7 @@ function startSetup(rowStart,rowEnd,color){
 						console.log(p,fp);
 						if (p == fp){ // If this is the last path we're checking, add 1 to the hitIteration
 							hitIteration++;
-							console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
 						}
-						console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
 						if (possibleHits.length > 0){
 							//console.log("Current paths: ",caller.currentPaths);
 							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
