@@ -131,6 +131,7 @@ function startSetup(rowStart,rowEnd,color){
 				var caller = this;
 				var possibleHits = [];
 				var nextMove = [];
+				var tempNext = [];
 				var hitIteration = 0;
 				
 				function getType(){				// "black" returns true, "white" returns false, anything else returns "null"
@@ -146,12 +147,12 @@ function startSetup(rowStart,rowEnd,color){
 				function checkAround(p,fp){
 					console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
 					console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
-					colorCell(x,y,"#f90","debug");
 					if (hitIteration > 0){			// On any iteration other than the first, look from another cell than the initial one!
-						//console.log(nextMove[p])
+						console.log(nextMove)
 						x = nextMove[p].x;
 						y = nextMove[p].y;
 					}
+					colorCell(x,y,"#f90","debug");
 					//console.log(x,y,caller,hitIteration,caller.currentPaths,possibleHits);
 					for (a = -1; a <= 1; a += 2){				// Look around the current piece
 						for (b = -1; b <= 1; b += 2){			// for pieces of the other type
@@ -169,15 +170,13 @@ function startSetup(rowStart,rowEnd,color){
 									}
 								} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
 									console.log("Piece of other type is found at: ",(x+a),(y+b));
-									colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
+									//colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
 									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
 										function addHitToList(){
 											console.log("Adding ",x+a,y+b," to the current hits");
 											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
-											nextMove.push({											// Another array for the position of the next iteration
-												x:(x+a*2),
-												y:(y+b*2)
-											});
+											tempNext.push(x+a*2);		
+											tempNext.push(y+b*2);
 										}
 										//console.log("Check if cell is free to land on: ",board.pieces[x+a*2][y+b*2]);
 										//console.log("Checking for path: ",p," and for iteration: ",hitIteration);
@@ -203,12 +202,23 @@ function startSetup(rowStart,rowEnd,color){
 						if (possibleHits.length > 0){
 							//console.log("Current paths: ",caller.currentPaths);
 							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
+								console.log(tempNext);
+								nextMove[p] = {									// Another array for the position of the next iteration
+									x:tempNext[0],
+									y:tempNext[1]
+								};
+								tempNext = [];
 								possibleHits = [];
 								var fp = caller.currentPaths.length-1;
 								checkAround(p,fp);
 							}
 						} else {
 							console.log("No new hits are found");
+							for (a = 0; a < caller.currentPaths.length; a++){
+								for (b = 0; b < caller.currentPaths[a].length; b++){
+									colorCell(caller.currentPaths[a][b].split("_")[0],caller.currentPaths[a][b].split("_")[1],"#b00","debug");
+								}
+							}
 						}
 					}
 					if (hitIteration > 0){								// If more hits are found after the first one
@@ -222,6 +232,7 @@ function startSetup(rowStart,rowEnd,color){
 							} else {									// If only one hit is found, add it to the current path.
 								caller.currentPaths[p][hitIteration] = possibleHits[i];
 							}
+							console.log(caller.currentPaths);
 						}
 						nextCheckAround(fp);
 					} else {											// Only for the first hit
@@ -229,10 +240,13 @@ function startSetup(rowStart,rowEnd,color){
 							caller.currentPaths.push([]);
 							caller.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
 						}
+						console.log(caller.currentPaths);
 						nextCheckAround(fp);
 					}
 				}
-				checkAround();
+				if (hitIteration == 0){
+					checkAround();
+				}
 			}
 		}
 	}
