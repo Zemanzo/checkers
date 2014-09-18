@@ -16,6 +16,7 @@ board.cellSize = (window.innerHeight-70)/(board.size);	// Determine height and w
 function init(){
 	// Create board
 	board.container = document.getElementById("checkersContainer");
+	board.container.style.width = (board.cellSize*board.size)+"px";
 	board.container.style.marginLeft = "-"+(board.cellSize*board.size)/2+"px"; // Center it
 	
 	// Fit header to board
@@ -48,7 +49,8 @@ function init(){
 	}
 	
 	// Set up pieces
-	board.pieces = {};
+	board.pieces = {};	
+	
 	// syntax: startSetup(startingRow-1,endingRow,type);
 	startSetup(0,4,"black");
 	startSetup(4,6,"null");
@@ -99,6 +101,7 @@ function startSetup(rowStart,rowEnd,color){
 			board.pieces[rows][i].position.x = rows;
 			board.pieces[rows][i].position.y = i;
 			board.pieces[rows][i].currentPaths = [];
+			board.pieces[rows][i].landingCells = [];
 			board.pieces[rows][i].selectPiece = function(){
 				//console.log(this);
 				var x = this.position.x;
@@ -151,6 +154,7 @@ function startSetup(rowStart,rowEnd,color){
 						console.log(nextMove)
 						x = nextMove[p].x;
 						y = nextMove[p].y;
+						caller.landingCells[p].push(x+"_"+y);
 					}
 					colorCell(x,y,"#f90","debug");
 					//console.log(x,y,caller,hitIteration,caller.currentPaths,possibleHits);
@@ -207,6 +211,9 @@ function startSetup(rowStart,rowEnd,color){
 									x:tempNext[0],
 									y:tempNext[1]
 								};
+								if (!caller.landingCells[p]){
+									caller.landingCells.push([]);
+								}
 								tempNext = [];
 								possibleHits = [];
 								var fp = caller.currentPaths.length-1;
@@ -214,9 +221,15 @@ function startSetup(rowStart,rowEnd,color){
 							}
 						} else {
 							console.log("No new hits are found");
+							// Done processing, color all hits dark red for debug purposes.
 							for (a = 0; a < caller.currentPaths.length; a++){
 								for (b = 0; b < caller.currentPaths[a].length; b++){
 									colorCell(caller.currentPaths[a][b].split("_")[0],caller.currentPaths[a][b].split("_")[1],"#b00","debug");
+									if (b == caller.currentPaths[a].length-1){
+										document.getElementById(caller.currentPaths[a][b]).style.cursor = "pointer";
+										document.getElementById(caller.currentPaths[a][b]).dataset.path = a;
+										document.getElementById(caller.currentPaths[a][b]).addEventListener("click", movePiece, false);
+									}
 								}
 							}
 						}
@@ -248,6 +261,24 @@ function startSetup(rowStart,rowEnd,color){
 					checkAround();
 				}
 			}
+			// Listen for changes for automatic piece placement / removal
+			Object.observe(board.pieces[rows][i],function(changes){
+				changes.forEach(function(change) {
+					// Letting us know what changed
+					if (change.name == "type"){
+						var x = change.object.position.x;
+						var y = change.object.position.y;
+						var element = document.getElementById("piece-"+x+"_"+y);
+						if (change.object.type == "null"){
+							element.parentElement.removeChild(element);
+						} else if (change.object.type == "white"){
+							
+						} else if (change.object.type == "black"){
+							
+						}
+					}
+				});
+			});
 		}
 	}
 }
@@ -282,12 +313,19 @@ function colorCell(x,y,color,type){
 function movePiece(){
 	var w = "white";
 	var b = "black";
+	var path = this.dataset.path;
 	if (board.currentPlayer == w){
 		board.currentPlayer = b;
 		move(w,this);
 	} else if (board.currentPlayer == b){
 		board.currentPlayer = w;
 		move(b,this);
+	}
+	if (path){
+		var pos = this.id.split("_");
+		for (i = 0; i < board.pieces[pos[0]][pos[1]].currentPaths[path].length; i++){
+			board.pieces[pos[0]][pos[1]].type = "null";
+		}
 	}
 	document.getElementById("player").innerHTML = board.currentPlayer;
 }
@@ -299,7 +337,7 @@ function move(col,e){
 		s[0] = s[0].substring(6);
 		board.pieces[s[0]][s[1]].type = "null";
 		board.pieces[m[0]][m[1]].type = col;
-		document.getElementById(selected).parentElement.removeChild(document.getElementById(selected));
+		//document.getElementById(selected).parentElement.removeChild(document.getElementById(selected));
 		document.getElementById(e.id).innerHTML += '<div data-type="'+col+'" id="piece-'+m[0]+'_'+m[1]+'" class="'+col+'Piece checkersPiece">&nbsp;</div>';
 		document.getElementById(e.id).addEventListener('click',function(){board.pieces[this.id.substring(0,1)][this.id.substring(2)].selectPiece()},false);
 		var movedPiece = document.getElementById('piece-'+m[0]+'_'+m[1]);
@@ -314,6 +352,7 @@ function move(col,e){
 			for (y = 0; y < board.size; y++){
 				if (board.pieces[x][y].type != "null"){
 					board.pieces[x][y].currentPaths = [];
+					board.pieces[x][y].landingCells = [];
 				}
 			}
 		}
