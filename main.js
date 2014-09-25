@@ -104,6 +104,28 @@ function startSetup(rowStart,rowEnd,color){
 			board.pieces[rows][i].landingCells = [];
 			board.pieces[rows][i].selectPiece = function(){
 				//console.log(this);
+				if (board.turns == 0){	// On starting, change the header to display info
+					document.getElementById("header").style.fontSize = "20px";
+					document.getElementById("header").innerHTML = '<div class="headerInfo" style="width:30%">Current player: <div id="player">White</div></div><div class="headerInfo" style="width:30%; font-size:.9em;">Turn: <span id="turns">0</span><br/>Time playing: <span id="time">00:00</span></div><div class="headerInfo" style="width:40%;">Info per player here</div>';
+					var seconds = 0;
+					var minutes = 0;
+					var zMin,zSec;
+					setInterval(function(){
+						seconds += 1;
+						minutes = Math.floor(seconds/60);
+						if (seconds%60 < 10){
+							zSec = "0";
+						} else {
+							zSec = "";
+						}
+						if (minutes%60 < 10){
+							zMin = "0";
+						} else {
+							zMin = "";
+						}
+						document.getElementById("time").innerHTML = zMin+minutes+":"+zSec+(seconds%60);
+					},1000);
+				}
 				var x = this.position.x;
 				var y = this.position.y;
 				var selectedId = "piece-"+x+"_"+y;
@@ -148,8 +170,8 @@ function startSetup(rowStart,rowEnd,color){
 				}
 				
 				function checkAround(p,fp){
-					console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
-					console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
+					//console.log("%c ITERATION "+hitIteration,"border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
+					//console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
 					if (hitIteration > 0){			// On any iteration other than the first, look from another cell than the initial one!
 						console.log(nextMove)
 						x = nextMove[p].x;
@@ -173,11 +195,11 @@ function startSetup(rowStart,rowEnd,color){
 										}
 									}
 								} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
-									console.log("Piece of other type is found at: ",(x+a),(y+b));
+									//console.log("Piece of other type is found at: ",(x+a),(y+b));
 									//colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
 									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
 										function addHitToList(){
-											console.log("Adding ",x+a,y+b," to the current hits");
+											//console.log("Adding ",x+a,y+b," to the current hits");
 											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
 											tempNext.push(x+a*2);		
 											tempNext.push(y+b*2);
@@ -190,7 +212,7 @@ function startSetup(rowStart,rowEnd,color){
 											} else if (board.pieces[x+a*2][y+b*2].type == "null" && caller.currentPaths[p].indexOf((x+a)+"_"+(y+b)) == -1 && typeof(p) != "undefined"){ 	// Make sure the piece it's hitting is NOT already in the current path.
 												addHitToList();
 											} else if (hitIteration != 0){
-												console.log("Found a dupe at ",(x+a),(y+b));
+												//console.log("Found a dupe at ",(x+a),(y+b));
 											}
 										}
 									}
@@ -199,14 +221,14 @@ function startSetup(rowStart,rowEnd,color){
 						}
 					}
 					function nextCheckAround(fp){
-						console.log(p,fp);
+						//console.log(p,fp);
 						if (p == fp){ // If this is the last path we're checking, add 1 to the hitIteration
 							hitIteration++;
 						}
 						if (possibleHits.length > 0){
 							//console.log("Current paths: ",caller.currentPaths);
 							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
-								console.log(tempNext);
+								//console.log(tempNext);
 								nextMove[p] = {									// Another array for the position of the next iteration
 									x:tempNext[0],
 									y:tempNext[1]
@@ -261,10 +283,14 @@ function startSetup(rowStart,rowEnd,color){
 					checkAround();
 				}
 			}
-			// Listen for changes for automatic piece placement / removal
+			/*
+				Listen for changes with Object.observe().
+				This allows us to only change the board.pieces arrays and make the rest (I.E. moving the actual pieces in the HTML) happen automatically!
+				Object.observe() is still a rather new function to default JavaScript and thus might not work on older browsers.
+				No fall-back support is implemented in this script!
+			*/
 			Object.observe(board.pieces[rows][i],function(changes){
 				changes.forEach(function(change) {
-					// Letting us know what changed
 					if (change.name == "type"){
 						var x = change.object.position.x;
 						var y = change.object.position.y;

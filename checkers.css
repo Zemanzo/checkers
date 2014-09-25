@@ -25,6 +25,7 @@ body {
 	flex-wrap:wrap;
 	margin:auto;
 	background:#000;
+	padding-left:200px; /* For #info */
 }
 
 #header {
@@ -35,14 +36,8 @@ body {
 	color:#000;
 }
 
-#info {
-	width:200px;
-	height:100%;
-	padding:5px;
-	box-sizing:border-box;
-	/*
-		border-right:5px solid #000;
-	*/
+.headerInfo {
+	display:inline-block;
 	text-align:center;
 	font-family:squarefont;
 	font-size:20px;
