@@ -5,6 +5,7 @@ var board = {};
 board.size = 10;				// Grid size (10 is default by international checkers rules)
 board.currentPlayer = "white";	// Starting player (White is default by international checkers rules)
 board.turns = 0;
+board.started = false;
 board.black = {};
 board.white = {};
 board.black.currentPieces = 0;
@@ -105,7 +106,8 @@ function startSetup(rowStart,rowEnd,color){
 			board.pieces[rows][i].landingCells = [];
 			board.pieces[rows][i].selectPiece = function(){
 				//console.log(this);
-				if (board.turns == 0){	// On starting, change the header to display info
+				if (!board.started){	// On starting, change the header to display info
+					board.started = true;
 					document.getElementById("header").style.fontSize = "20px";
 					document.getElementById("header").innerHTML = '<div class="headerInfo" style="width:30%">Current player: <div id="player">White</div></div><div class="headerInfo" style="width:30%; font-size:.9em;">Turn: <span id="turns">0</span><br/>Time playing: <span id="time">00:00</span></div><div class="headerInfo" style="width:40%;">Info per player here</div>';
 					// Simple timer (per second)
