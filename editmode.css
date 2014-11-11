@@ -1,0 +1,12 @@
+.editButton {
+	width:16.666%;
+	border:solid 3px #000;
+	box-sizing:border-box;
+	display:inline-block;
+}
+
+.editButton:hover{
+	border:solid 3px #f90;
+	background-color:#fc3;
+	cursor:pointer;
+}

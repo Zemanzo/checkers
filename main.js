@@ -1,6 +1,6 @@
 /* Checkers by Zemanzo - 2014 */
 
-var selected;
+var selected, timerInterval;
 var board = {};
 board.size = 10;				// Grid size (10 is default by international checkers rules)
 board.currentPlayer = "white";	// Starting player (White is default by international checkers rules)
@@ -114,7 +114,7 @@ function startSetup(rowStart,rowEnd,color){
 					var seconds = 0;
 					var minutes = 0;
 					var zMin,zSec;
-					setInterval(function(){
+					timerInterval = setInterval(function(){
 						seconds += 1;
 						minutes = Math.floor(seconds/60);
 						if (seconds%60 < 10){
@@ -174,7 +174,7 @@ function startSetup(rowStart,rowEnd,color){
 				}
 				
 				function checkAround(p,fp){
-					console.log("%c CHECKAROUND ","border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
+					console.log("%c CHECKAROUND | PATH: "+p+" | ITERATION: "+hitIteration+" ","border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
 					//console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
 					if (hitIteration > 0){			// On any iteration other than the first, look from another cell than the initial one!
 						console.log("Next move is: ",nextMove[p]);
