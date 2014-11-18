@@ -1,8 +1,10 @@
 .editButton {
 	width:16.666%;
+	height:70px;
 	border:solid 3px #000;
 	box-sizing:border-box;
-	display:inline-block;
+	display:table-cell;
+	vertical-align:middle;
 }
 
 .editButton:hover{

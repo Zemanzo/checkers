@@ -1,6 +1,12 @@
 /* Checkers by Zemanzo - 2014 */
 
+// Add extensions to this array to enable them!
+var extensions = [
+	//"editmode.js"
+];
+
 var selected, timerInterval;
+var doneSettingUp = new Event('setupDone');
 var board = {};
 board.size = 10;				// Grid size (10 is default by international checkers rules)
 board.currentPlayer = "white";	// Starting player (White is default by international checkers rules)
@@ -23,6 +29,15 @@ function init(){
 	// Fit header to board
 	document.getElementById("header").style.width = (board.cellSize*board.size)+"px";
 	document.getElementById("header").style.marginLeft = "-"+(board.cellSize*board.size)/2+"px"; // Center it
+	
+	// Load extensions when done setting up
+	window.addEventListener("setupDone",function(){
+		for (i = 0;i < extensions.length; i++){
+			var ex = document.createElement("script");
+			ex.src = extensions[i];
+			document.head.appendChild(ex);
+		}
+	},false);
 	
 	// Write custom style to support variable window sizes
 	var customStyle = document.createElement("style");
@@ -64,12 +79,12 @@ function init(){
 			if (board.pieces[x][y].type != "null" && typeof(board.pieces[x][y].type) != "undefined"){
 				document.getElementById(x+'_'+y).innerHTML += '<div data-type="'+board.pieces[x][y].type+'" id="piece-'+x+'_'+y+'" class="'+board.pieces[x][y].type+'Piece checkersPiece">&nbsp;</div>';
 				document.getElementById(x+'_'+y).addEventListener('click',function(){board.pieces[this.id.substring(0,1)][this.id.substring(2)].selectPiece()},false);
+				if (x == board.size-1 && y == board.size-2){
+					document.getElementById("piece-"+x+"_"+y).onload = window.dispatchEvent(doneSettingUp);
+				}
 			}						
 		}
 	}
-
-	// Indicate starting player
-	//document.getElementById("player").innerHTML = board.currentPlayer;
 }
 
 function startSetup(rowStart,rowEnd,color){
@@ -111,24 +126,7 @@ function startSetup(rowStart,rowEnd,color){
 					document.getElementById("header").style.fontSize = "20px";
 					document.getElementById("header").innerHTML = '<div class="headerInfo" style="width:30%">Current player: <div id="player">White</div></div><div class="headerInfo" style="width:30%; font-size:.9em;">Turn: <span id="turns">0</span><br/>Time playing: <span id="time">00:00</span></div><div class="headerInfo" style="width:40%;">Info per player here</div>';
 					// Simple timer (per second)
-					var seconds = 0;
-					var minutes = 0;
-					var zMin,zSec;
-					timerInterval = setInterval(function(){
-						seconds += 1;
-						minutes = Math.floor(seconds/60);
-						if (seconds%60 < 10){
-							zSec = "0";
-						} else {
-							zSec = "";
-						}
-						if (minutes%60 < 10){
-							zMin = "0";
-						} else {
-							zMin = "";
-						}
-						document.getElementById("time").innerHTML = zMin+minutes+":"+zSec+(seconds%60);
-					},1000);
+					toggleTimer(true)
 				}
 				var x = this.position.x;
 				var y = this.position.y;
@@ -187,7 +185,7 @@ function startSetup(rowStart,rowEnd,color){
 					//console.log(x,y,caller,hitIteration,caller.currentPaths,possibleHits);
 					for (a = -1; a <= 1; a += 2){				// Look around the current piece
 						for (b = -1; b <= 1; b += 2){			// for pieces of the other type
-							if (typeof(board.pieces[x+a][y+b]) != "undefined"){					// Check if next position is not out of bounds
+							if (isOOB((x+a),(y+b))){ // Check if next position is not out of bounds
 								var antiType = ( ( getType() ) ? "white" : "black");
 								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
 									if (getType()){
@@ -202,12 +200,17 @@ function startSetup(rowStart,rowEnd,color){
 								} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
 									//console.log("Piece of other type is found at: ",(x+a),(y+b));
 									//colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
-									if (typeof(board.pieces[x+a*2][y+b*2]) != "undefined"){			// Check if its not out of bounds (again)
+									if (isOOB((x+(a*2)),(y+(b*2)))){
 										function addHitToList(){
 											//console.log("Adding ",x+a,y+b," to the current hits");
 											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
-											tempNext.push(x+a*2);		
-											tempNext.push(y+b*2);
+											if (hitIteration == 0){
+												tempNext.push(x+a*2);		
+												tempNext.push(y+b*2);
+											} else {
+												tempNext[2*p] = x+(a*2);
+												tempNext[2*p+1] = y+(a*2);
+											}
 											console.log("(path ",p,") tempNext = ",tempNext);
 										}
 										//console.log("Check if cell is free to land on: ",board.pieces[x+a*2][y+b*2]);
@@ -232,7 +235,7 @@ function startSetup(rowStart,rowEnd,color){
 						if (p == fp){ // If this is the last path we're checking, add 1 to the hitIteration
 							hitIteration++;
 						}
-						if (possibleHits.length > 0){
+						if (possibleHits.length > 0 /*&& hitIteration == 0*/){
 							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
 								console.log("tempNext before nextMove (",p,") = ",tempNext);
 								nextMove[p] = {									// Another array for the position of the next iteration
@@ -246,13 +249,27 @@ function startSetup(rowStart,rowEnd,color){
 								var fp = caller.currentPaths.length-1;
 							}
 							
-							tempNext = [];
+							//tempNext = [];
 							possibleHits = [];
 							
 							for (p = 0; p < caller.currentPaths.length; p++){
 								checkAround(p,fp);
 							}
-						} else {
+						}/* else if (possibleHits.length > 0 && hitIteration > 0){
+							console.log("tempNext before nextMove (",p,") = ",tempNext);
+							nextMove[p] = {									// Another array for the position of the next iteration
+								x:tempNext[0],
+								y:tempNext[1]
+							};
+							console.log("nextMove[p] = ",nextMove[p]);
+							if (!caller.landingCells[p]){
+								caller.landingCells.push([]);
+							}
+							var fp = caller.currentPaths.length-1;
+							tempNext = [];
+							possibleHits = [];
+							checkAround(p,fp);
+						}*/ else {
 							console.log("No new hits are found");
 							// Done processing
 							// Add an eventlistener to all possible landing cells
@@ -262,7 +279,7 @@ function startSetup(rowStart,rowEnd,color){
 										document.getElementById(caller.landingCells[a][b]).style.cursor = "pointer";
 										document.getElementById(caller.landingCells[a][b]).dataset.path = a;
 										document.getElementById(caller.landingCells[a][b]).addEventListener("click", movePiece, false);
-										console.log("%c Landing cell created on path "+a+" found at "+caller.currentPaths[a][b].split("_")[0]+","+caller.currentPaths[a][b].split("_")[1],"border-left:rgb(255,128,0) 3px solid;");
+										//console.log("%c Landing cell created on path "+a+" found at "+caller.currentPaths[a][b].split("_")[0]+","+caller.currentPaths[a][b].split("_")[1],"border-left:rgb(255,128,0) 3px solid;");
 									}
 								}
 							}
@@ -282,7 +299,7 @@ function startSetup(rowStart,rowEnd,color){
 							if (i > 0){									// If there's more than one hit, a new path is found
 								var temp = [];							// New path is found, so create a new array for it, and fill it with all previous hits
 								for (u = 0; u < hitIteration; u++){
-									temp.push(currentPaths[p][u]);
+									temp.push(caller.currentPaths[p][u]);
 								}
 								caller.currentPaths.push(temp);			// Add the new path to the full array
 							} else {									// If only one hit is found, add it to the current path.
@@ -428,7 +445,9 @@ function move(col,e){
 		clearMoveset();
 		selected = "null";
 		board.turns += 1;
-		document.getElementById("turns").innerHTML = board.turns;
+		if (exLoaded("editmode.js")){
+			(!board.editMode.active ? document.getElementById("turns").innerHTML = board.turns : null);
+		}
 }
 
 function isEven(number){
@@ -436,5 +455,46 @@ function isEven(number){
 		return 1;
 	} else {
 		return 0;
+	}
+}
+
+function isOOB(c,d){ // Checks if there actually is a board cell there!
+	if (typeof(board.pieces[c]) != "undefined"){					// Check if next position is not out of bounds
+		if (typeof(board.pieces[c][d]) != "undefined"){
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+}
+
+function toggleTimer(toggle){
+	(toggle ? timerInterval = setInterval(function(){timer()},1000) : clearInterval(timerInterval));
+}
+
+var seconds = 0;
+var minutes = 0;
+var zMin,zSec;
+function timer(){
+	seconds += 1;
+	minutes = Math.floor(seconds/60);
+	if (seconds%60 < 10){
+		zSec = "0";
+	} else {
+		zSec = "";
+	}
+	if (minutes%60 < 10){
+		zMin = "0";
+	} else {
+		zMin = "";
+	}
+	document.getElementById("time").innerHTML = zMin+minutes+":"+zSec+(seconds%60);
+}
+
+function exLoaded(file){
+	if (extensions.indexOf(file) != -1){
+		return true;
 	}
 }
