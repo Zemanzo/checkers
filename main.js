@@ -104,13 +104,14 @@ function startSetup(rowStart,rowEnd,color){
 			}
 			
 			/*
-			Set up pieces in board.pieces object
-			string -- Type
-			object -- Position (for this.position);
-				integer -- x
-				integer -- y
-			function -- selectPiece()
-			function -- getMoveset()
+				Set up pieces in board.pieces object
+				string -- Type
+				object -- Position (for this.position);
+					integer -- x
+					integer -- y
+				function -- selectPiece()
+				function -- getMoveset()
+				automatic function / listener -- Object.observe()
 			*/
 			board.pieces[rows][i] = {};
 			board.pieces[rows][i].type = pieceSet;
@@ -174,7 +175,7 @@ function startSetup(rowStart,rowEnd,color){
 				function checkAround(p,fp){
 					console.log("%c CHECKAROUND | PATH: "+p+" | ITERATION: "+hitIteration+" ","border-left:rgb(90,90,255) 3px solid; background-color:rgba(90,90,255,.5);");
 					//console.log("%c PATH "+p,"border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
-					if (hitIteration > 0){			// On any iteration other than the first, look from another cell than the initial one!
+					if (hitIteration > 0){ // On any iteration other than the first, look from another cell than the initial one!
 						console.log("Next move is: ",nextMove[p]);
 						x = nextMove[p].x;
 						y = nextMove[p].y;
@@ -183,27 +184,32 @@ function startSetup(rowStart,rowEnd,color){
 					}
 					colorCell(x,y,"#f90","debug");
 					//console.log(x,y,caller,hitIteration,caller.currentPaths,possibleHits);
-					for (a = -1; a <= 1; a += 2){				// Look around the current piece
-						for (b = -1; b <= 1; b += 2){			// for pieces of the other type
+					/*
+						This entire for-loop checks for the possible moves. First it checks around the current piece to see if there's any simple spot to land on, or a piece of the other type (so a possible hit). If it's an empty spot, it adds a simple landing cell. If it's a piece of the other type, it starts looking if there's an empty spot behind it. If so, it's a confirmed hit. It adds both co-ordinates to two arrays: tempNext[], which will be used for landingCells[] later on (and for the next move obviously) and possibleHits[], which will be used to determine what pieces to remove when actually moving this piece.
+						
+						These arrays will then be used to further process paths and hits. This happens after the for-loop. 
+					*/
+					for (a = -1; a <= 1; a += 2){ // Look around the current piece
+						for (b = -1; b <= 1; b += 2){ // for pieces of the other type
 							if (isOOB((x+a),(y+b))){ // Check if next position is not out of bounds
 								var antiType = ( ( getType() ) ? "white" : "black");
-								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){			// If an empty cell is found, color it blue (and addeventlistener etc. etc.)
+								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){ // If an empty cell is found, color it blue (and addeventlistener etc. etc.)
 									if (getType()){
 										if (a > 0){
-											colorCell(x+a,y+b,null,"moveSimple");	// If type is black, moveSimple can only move DOWN
+											colorCell(x+a,y+b,null,"moveSimple"); // If type is black, moveSimple can only move DOWN
 										}
 									} else {
 										if (a < 0){
-											colorCell(x+a,y+b,null,"moveSimple");	// If type is white, moveSimple can only move UP
+											colorCell(x+a,y+b,null,"moveSimple"); // If type is white, moveSimple can only move UP
 										}
 									}
-								} else if (board.pieces[x+a][y+b].type == antiType){				// If a piece of the other type is found
+								} else if (board.pieces[x+a][y+b].type == antiType){ // If a piece of the other type is found
 									//console.log("Piece of other type is found at: ",(x+a),(y+b));
-									//colorCell(x+a,y+b,"#9f9","debug");								// Color it greenish to show where it checked
+									//colorCell(x+a,y+b,"#9f9","debug"); // Color it greenish to show where it checked
 									if (isOOB((x+(a*2)),(y+(b*2)))){
-										function addHitToList(){
+										function addHitToList(){ // NOTE: this is a function and will NOT be triggered immediately when parsing 
 											//console.log("Adding ",x+a,y+b," to the current hits");
-											possibleHits.push((x+a)+"_"+(y+b));						// Add it to the array before treating it
+											possibleHits.push((x+a)+"_"+(y+b)); // Add it to the array before treating it
 											if (hitIteration == 0){
 												tempNext.push(x+a*2);		
 												tempNext.push(y+b*2);
@@ -393,9 +399,24 @@ function colorCell(x,y,color,type){
 
 // This function is called when the player clicks an empty spot to move its checkers piece to.
 function movePiece(){
+	var pos = selected.substring(6).split("_");
+	var movingPiece = document.getElementById(selected);
 	var w = "white";
 	var b = "black";
 	var path = this.dataset.path;
+	
+	// In case a path was found in the data of the moved piece, remove all hit pieces.
+	if (path){
+		console.log("FOUND PATH, WILL REMOVE");
+		console.log(board.pieces[pos[0]][pos[1]].currentPaths[path]);
+		console.log(path);
+		for (i = 0; i < board.pieces[pos[0]][pos[1]].currentPaths[path].length; i++){
+			var bleh = board.pieces[pos[0]][pos[1]].currentPaths[path][i];
+			meerbleh = bleh.split("_");
+			board.pieces[meerbleh[0]][meerbleh[1]].type = "null";
+		}
+	}
+	
 	if (board.currentPlayer == w){
 		board.currentPlayer = b;
 		move(w,this);
@@ -403,15 +424,7 @@ function movePiece(){
 		board.currentPlayer = w;
 		move(b,this);
 	}
-	// In case a path was found in the data of the moved piece, remove all hit pieces.
-	if (path){
-		var pos = this.id.split("_");
-		console.log(board.pieces[pos[0]][pos[1]]);
-		console.log(path);
-		for (i = 0; i < board.pieces[pos[0]][pos[1]].currentPaths[path].length; i++){
-			board.pieces[pos[0]][pos[1]].type = "null";
-		}
-	}
+	
 	document.getElementById("player").innerHTML = board.currentPlayer;
 }
 
