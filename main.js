@@ -78,7 +78,7 @@ function init(){
 		for (y = 0; y < board.size; y++){
 			if (board.pieces[x][y].type != "null" && typeof(board.pieces[x][y].type) != "undefined"){
 				document.getElementById(x+'_'+y).innerHTML += '<div data-type="'+board.pieces[x][y].type+'" id="piece-'+x+'_'+y+'" class="'+board.pieces[x][y].type+'Piece checkersPiece">&nbsp;</div>';
-				document.getElementById(x+'_'+y).addEventListener('click',function(){board.pieces[this.id.substring(0,1)][this.id.substring(2)].selectPiece()},false);
+				document.getElementById(x+'_'+y).addEventListener('click',subSelect,false);
 				if (x == board.size-1 && y == board.size-2){
 					document.getElementById("piece-"+x+"_"+y).onload = window.dispatchEvent(doneSettingUp);
 				}
@@ -121,13 +121,13 @@ function startSetup(rowStart,rowEnd,color){
 			board.pieces[rows][i].currentPaths = [];
 			board.pieces[rows][i].landingCells = [];
 			board.pieces[rows][i].selectPiece = function(){
-				//console.log(this);
+				console.log(selected);
 				if (!board.started){	// On starting, change the header to display info
 					board.started = true;
 					document.getElementById("header").style.fontSize = "20px";
 					document.getElementById("header").innerHTML = '<div class="headerInfo" style="width:30%">Current player: <div id="player">White</div></div><div class="headerInfo" style="width:30%; font-size:.9em;">Turn: <span id="turns">0</span><br/>Time playing: <span id="time">00:00</span></div><div class="headerInfo" style="width:40%;">Info per player here</div>';
 					// Simple timer (per second)
-					toggleTimer(true)
+					toggleTimer(true);
 				}
 				var x = this.position.x;
 				var y = this.position.y;
@@ -135,19 +135,21 @@ function startSetup(rowStart,rowEnd,color){
 				var type = this.type;
 				var selectedPiece = document.getElementById(selectedId);
 				
-				if ( (typeof(selected) == "undefined" || selected == "null") && type == board.currentPlayer) {	// Nothing is selected, clicked one will be selected
+				if ( (typeof(selected) == "undefined" || selected == "null") && type == board.currentPlayer) { // Nothing is selected, clicked one will be selected
 					selected = selectedId;
 					selectedPiece.style.border = "4px solid #f00";
 					board.pieces[x][y].getMoveset();
-				} else if (selected == selectedId) {															// Same pieces is selected, thus a deselect is performed
+				} else if (selected == selectedId) { // Same pieces is selected, thus a deselect is performed
 					selected = "null";
 					selectedPiece.style.border = "none";
 					clearMoveset();
-				} else if (type == board.currentPlayer) {														// Other piece is selected, previous will be deselected and new one will be selected
+				} else if (type == board.currentPlayer) { // Other piece is selected, previous will be deselected and new one will be selected
 					document.getElementById(selected).style.border = "none";
 					selected = selectedId;
 					selectedPiece.style.border = "4px solid #f00";
 					board.pieces[x][y].getMoveset();
+				} else {
+					console.log("Lol wut");
 				}
 			};
 			board.pieces[rows][i].getMoveset = function(){	// Function to get moveset
@@ -159,7 +161,7 @@ function startSetup(rowStart,rowEnd,color){
 				var caller = this;
 				var possibleHits = [];
 				var nextMove = [];
-				var tempNext = [];
+				var tempNext = []; // This is used to temporarily store coordinates for the next move. It is set up per path as following: [x,y,x,y,x,y] (Path 0, 1 and 2)
 				var hitIteration = 0;
 				
 				function getType(){				// "black" returns true, "white" returns false, anything else returns "null"
@@ -215,7 +217,7 @@ function startSetup(rowStart,rowEnd,color){
 												tempNext.push(y+b*2);
 											} else {
 												tempNext[2*p] = x+(a*2);
-												tempNext[2*p+1] = y+(a*2);
+												tempNext[2*p+1] = y+(b*2);
 											}
 											console.log("(path ",p,") tempNext = ",tempNext);
 										}
@@ -261,21 +263,7 @@ function startSetup(rowStart,rowEnd,color){
 							for (p = 0; p < caller.currentPaths.length; p++){
 								checkAround(p,fp);
 							}
-						}/* else if (possibleHits.length > 0 && hitIteration > 0){
-							console.log("tempNext before nextMove (",p,") = ",tempNext);
-							nextMove[p] = {									// Another array for the position of the next iteration
-								x:tempNext[0],
-								y:tempNext[1]
-							};
-							console.log("nextMove[p] = ",nextMove[p]);
-							if (!caller.landingCells[p]){
-								caller.landingCells.push([]);
-							}
-							var fp = caller.currentPaths.length-1;
-							tempNext = [];
-							possibleHits = [];
-							checkAround(p,fp);
-						}*/ else {
+						} else {
 							console.log("No new hits are found");
 							// Done processing
 							// Add an eventlistener to all possible landing cells
@@ -330,7 +318,7 @@ function startSetup(rowStart,rowEnd,color){
 			/*
 				Listen for changes with Object.observe().
 				This allows us to only change the board.pieces arrays and make the rest (I.E. moving the actual pieces in the HTML) happen automatically!
-				Object.observe() is still a rather new function to default JavaScript and thus might not work on older browsers.
+				Object.observe() is still a very new function to JavaScript and DOES NOT WORK FOR FIREFOX, SAFARI AND IE or older browsers.
 				No fall-back support is implemented in this script!
 			*/
 			Object.observe(board.pieces[rows][i],function(changes){
@@ -340,17 +328,22 @@ function startSetup(rowStart,rowEnd,color){
 						var x = change.object.position.x;
 						var y = change.object.position.y;
 						var element = document.getElementById("piece-"+x+"_"+y);
-						if (change.object.type == "null"){ // If the piece type is changed to null, its removed.
+						if (change.object.type == "null"){ // If the piece type is changed to null, it's removed.
 							element.parentElement.removeChild(element);
-							document.getElementById(element).removeEventListener('click',function(){
-								board.pieces[this.id.substring(0,1)][this.id.substring(2)].selectPiece();
-							},false); // UNTESTED!!!
-						} else if (change.object.type == "white"|| change.object.type == "black"){
+							document.getElementById(x+"_"+y).removeEventListener('click',subSelect,false);
+						} else if (change.object.type == "white" || change.object.type == "black"){
 							console.log(element);
 							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+change.object.type+'" id="piece-'+x+'_'+y+'" class="'+change.object.type+'Piece checkersPiece">&nbsp;</div>';
-							document.getElementById(x+"_"+y).addEventListener('click',function(){
-								board.pieces[this.id.substring(0,1)][this.id.substring(2)].selectPiece();
-							},false);
+							function addev(){
+								document.getElementById(x+"_"+y).addEventListener('click',subSelect,false);
+							}
+							if (exLoaded("editmode.js")){
+								if(board.editMode.active){
+									addev();
+								}
+							} else {
+								addev();
+							}
 							if (y == 0 || y == 9){
 								movedPiece.style.backgroundImage = "url('crown.png')";
 								element.dataset.type = col+"King";
@@ -461,6 +454,10 @@ function move(col,e){
 		if (exLoaded("editmode.js")){
 			(!board.editMode.active ? document.getElementById("turns").innerHTML = board.turns : null);
 		}
+}
+
+function subSelect(){
+	board.pieces[this.id.substring(0,1)][this.id.substring(2)].selectPiece();
 }
 
 function isEven(number){
