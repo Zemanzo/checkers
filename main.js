@@ -212,12 +212,13 @@ function startSetup(rowStart,rowEnd,color){
 										function addHitToList(){ // NOTE: this is a function and will NOT be triggered immediately when parsing 
 											//console.log("Adding ",x+a,y+b," to the current hits");
 											possibleHits.push((x+a)+"_"+(y+b)); // Add it to the array before treating it
+											console.log("Possible hits:",possibleHits);
 											if (hitIteration == 0){
 												tempNext.push(x+a*2);		
 												tempNext.push(y+b*2);
 											} else {
-												tempNext[2*p] = x+(a*2);
-												tempNext[2*p+1] = y+(b*2);
+												tempNext[2*p+(possibleHits.length-1)*2] = x+(a*2);
+												tempNext[2*p+(possibleHits.length-1)*2+1] = y+(b*2);
 											}
 											console.log("(path ",p,") tempNext = ",tempNext);
 										}
@@ -245,7 +246,7 @@ function startSetup(rowStart,rowEnd,color){
 						}
 						if (possibleHits.length > 0 /*&& hitIteration == 0*/){
 							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
-								console.log("tempNext before nextMove (",p,") = ",tempNext);
+								//console.log("tempNext before nextMove (",p,") = ",tempNext);
 								nextMove[p] = {									// Another array for the position of the next iteration
 									x:tempNext[2*p],
 									y:tempNext[2*p+1]
@@ -261,7 +262,9 @@ function startSetup(rowStart,rowEnd,color){
 							possibleHits = [];
 							
 							for (p = 0; p < caller.currentPaths.length; p++){
-								checkAround(p,fp);
+								if(caller.landingCells[p].indexOf(nextMove[p].x+"_"+nextMove[p].y) == -1){ // Make sure the landing cell isn't checked again (It's no use!)
+									checkAround(p,fp);
+								}
 							}
 						} else {
 							console.log("No new hits are found");
@@ -288,22 +291,28 @@ function startSetup(rowStart,rowEnd,color){
 					}
 					
 					// Code continues processing here
-					if (hitIteration > 0){								// If more hits are found after the first one
-						for (i = 0; i < possibleHits.length; i++){		// Treat hits
-							if (i > 0){									// If there's more than one hit, a new path is found
-								var temp = [];							// New path is found, so create a new array for it, and fill it with all previous hits
-								for (u = 0; u < hitIteration; u++){
-									temp.push(caller.currentPaths[p][u]);
+					if (hitIteration > 0){ // If more hits are found after the first one
+						for (i = 0; i < possibleHits.length; i++){ // Treat hits
+							if (possibleHits.length > 1){ // If there's more than one hit, a new path is found
+								if (i > 0){
+									var temp = []; // New path is found, so create a new array for it, and fill it with all previous hits
+									for (u = 0; u < hitIteration; u++){ // For each item in currentPaths[p], up until the current iteration.
+										temp.push(caller.currentPaths[p][u]);
+									}
+									console.log(temp);
+									caller.currentPaths.push(temp); // Add the new path to the full array
+									caller.currentPaths[p+i].push(possibleHits[i]);
+								} else {
+									caller.currentPaths[caller.currentPaths.length-1].push(possibleHits[i]);
 								}
-								caller.currentPaths.push(temp);			// Add the new path to the full array
-							} else {									// If only one hit is found, add it to the current path.
+							} else { // If only one hit is found, add it to the current path.
 								caller.currentPaths[p][hitIteration] = possibleHits[i];
 							}
-							console.log(caller.currentPaths);
+							console.log(caller.currentPaths[1],caller.currentPaths[2]);
 						}
 						nextCheckAround(fp);
-					} else {											// ONLY ON THE FIRST HIT
-						for (i = 0; i < possibleHits.length; i++){		// Treat hits
+					} else { // ONLY ON THE FIRST HIT
+						for (i = 0; i < possibleHits.length; i++){ // Treat hits
 							caller.currentPaths.push([]);
 							caller.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
 						}
