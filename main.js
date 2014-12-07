@@ -2,22 +2,37 @@
 
 // Add extensions to this array to enable them!
 var extensions = [
-	//"editmode.js"
+	//"editmode.js",
+	"AI/ai_stupid.js"
 ];
 
 var selected, timerInterval;
+
+// Custom events
 var doneSettingUp = new Event('setupDone');
-var board = {};
-board.size = 10;				// Grid size (10 is default by international checkers rules)
-board.currentPlayer = "white";	// Starting player (White is default by international checkers rules)
-board.turns = 0;
-board.started = false;
-board.black = {};
-board.white = {};
-board.black.currentPieces = 0;
-board.white.currentPieces = 0;
-board.black.lostPieces = 0;
-board.white.lostPieces = 0;
+var playerSwitch = new Event('playerSwitched');
+var boardStart = new Event('boardStarted');
+
+// Settings
+var board = {
+	size: 10,					// Grid size (10 is default by international checkers rules)
+	currentPlayer: "white",		// Starting player (White is default by international checkers rules)
+	turns: 0,
+	started: false
+};
+
+board.black = {
+	currentPieces: 0,
+	lostPieces: 0,
+	pieces: []
+};
+
+board.white = {
+	currentPieces: 0,
+	lostPieces: 0,
+	pieces: []
+};
+
 board.cellSize = (window.innerHeight-70)/(board.size);	// Determine height and width for each board cell to support variable window sizes
 
 function init(){
@@ -77,6 +92,7 @@ function init(){
 	for (x = 0; x < board.size; x++){
 		for (y = 0; y < board.size; y++){
 			if (board.pieces[x][y].type != "null" && typeof(board.pieces[x][y].type) != "undefined"){
+				board[board.pieces[x][y].type].pieces.push(x+"_"+y);
 				document.getElementById(x+'_'+y).innerHTML += '<div data-type="'+board.pieces[x][y].type+'" id="piece-'+x+'_'+y+'" class="'+board.pieces[x][y].type+'Piece checkersPiece">&nbsp;</div>';
 				document.getElementById(x+'_'+y).addEventListener('click',subSelect,false);
 				if (x == board.size-1 && y == board.size-2){
@@ -121,9 +137,10 @@ function startSetup(rowStart,rowEnd,color){
 			board.pieces[rows][i].currentPaths = [];
 			board.pieces[rows][i].landingCells = [];
 			board.pieces[rows][i].selectPiece = function(){
-				console.log(selected);
+				//console.log(selected);
 				if (!board.started){	// On starting, change the header to display info
 					board.started = true;
+					window.dispatchEvent(boardStart);
 					document.getElementById("header").style.fontSize = "20px";
 					document.getElementById("header").innerHTML = '<div class="headerInfo" style="width:30%">Current player: <div id="player">White</div></div><div class="headerInfo" style="width:30%; font-size:.9em;">Turn: <span id="turns">0</span><br/>Time playing: <span id="time">00:00</span></div><div class="headerInfo" style="width:40%;">Info per player here</div>';
 					// Simple timer (per second)
@@ -149,7 +166,7 @@ function startSetup(rowStart,rowEnd,color){
 					selectedPiece.style.border = "4px solid #f00";
 					board.pieces[x][y].getMoveset();
 				} else {
-					console.log("Lol wut");
+					//alert("It's "+board.currentPlayer+"'s turn!");
 				}
 			};
 			board.pieces[rows][i].getMoveset = function(){	// Function to get moveset
@@ -220,7 +237,7 @@ function startSetup(rowStart,rowEnd,color){
 												tempNext[2*p+(possibleHits.length-1)*2] = x+(a*2);
 												tempNext[2*p+(possibleHits.length-1)*2+1] = y+(b*2);
 											}
-											console.log("(path ",p,") tempNext = ",tempNext);
+											//console.log("(path ",p,") tempNext = ",tempNext);
 										}
 										//console.log("Check if cell is free to land on: ",board.pieces[x+a*2][y+b*2]);
 										//console.log("Checking for path: ",p," and for iteration: ",hitIteration);
@@ -251,7 +268,7 @@ function startSetup(rowStart,rowEnd,color){
 									x:tempNext[2*p],
 									y:tempNext[2*p+1]
 								};
-								console.log("nextMove[p] = ",nextMove[p]);
+								//console.log("nextMove[p] = ",nextMove[p]);
 								if (!caller.landingCells[p]){
 									caller.landingCells.push([]);
 								}
@@ -299,7 +316,7 @@ function startSetup(rowStart,rowEnd,color){
 									for (u = 0; u < hitIteration; u++){ // For each item in currentPaths[p], up until the current iteration.
 										temp.push(caller.currentPaths[p][u]);
 									}
-									console.log(temp);
+									//console.log(temp);
 									caller.currentPaths.push(temp); // Add the new path to the full array
 									caller.currentPaths[p+i].push(possibleHits[i]);
 								} else {
@@ -308,7 +325,7 @@ function startSetup(rowStart,rowEnd,color){
 							} else { // If only one hit is found, add it to the current path.
 								caller.currentPaths[p][hitIteration] = possibleHits[i];
 							}
-							console.log(caller.currentPaths[1],caller.currentPaths[2]);
+							//console.log(caller.currentPaths[1],caller.currentPaths[2]);
 						}
 						nextCheckAround(fp);
 					} else { // ONLY ON THE FIRST HIT
@@ -316,7 +333,7 @@ function startSetup(rowStart,rowEnd,color){
 							caller.currentPaths.push([]);
 							caller.currentPaths[i][hitIteration] = possibleHits[i];	// On the first iteration, create a new path for every hit
 						}
-						console.log(caller.currentPaths);
+						//console.log(caller.currentPaths);
 						nextCheckAround(fp);
 					}
 				}
@@ -336,13 +353,25 @@ function startSetup(rowStart,rowEnd,color){
 						console.log(change);
 						var x = change.object.position.x;
 						var y = change.object.position.y;
+						var t = change.object.type;
+						var o = change.oldValue;
 						var element = document.getElementById("piece-"+x+"_"+y);
-						if (change.object.type == "null"){ // If the piece type is changed to null, it's removed.
+						
+						if (o == "white" || o == "black"){
+							board[o].pieces.splice(board[o].pieces.indexOf(x+"_"+y),1); // Lovely
+							board[o].currentPieces = (board[o].pieces.length);
+							board[o].lostPieces = 20-(board[o].pieces.length); // 20 is default, make this a variable if board.size changes!!!!
+						}
+						if (o == "null"){
+							board[t].pieces.push(x+"_"+y);
+						}
+						
+						if (t == "null"){ // If the piece type is changed to null, it's removed.
 							element.parentElement.removeChild(element);
 							document.getElementById(x+"_"+y).removeEventListener('click',subSelect,false);
-						} else if (change.object.type == "white" || change.object.type == "black"){
+						} else if (t == "white" || t == "black"){
 							console.log(element);
-							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+change.object.type+'" id="piece-'+x+'_'+y+'" class="'+change.object.type+'Piece checkersPiece">&nbsp;</div>';
+							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+t+'" id="piece-'+x+'_'+y+'" class="'+t+'Piece checkersPiece">&nbsp;</div>';
 							function addev(){
 								document.getElementById(x+"_"+y).addEventListener('click',subSelect,false);
 							}
@@ -392,6 +421,7 @@ function colorCell(x,y,color,type){
 		document.getElementById(x+"_"+y).style.backgroundColor = "#99f";
 		document.getElementById(x+"_"+y).style.cursor = "pointer";
 		document.getElementById(x+"_"+y).addEventListener("click", movePiece, false);
+		board.pieces[x][y].landingCells.push(x+"_"+y);
 		console.log("%c Simple hit found and created at "+x+","+y+" ("+type+")","border-left:rgb(0,0,255) 3px solid;");
 	} else if (type == "debug"){
 		document.getElementById(x+"_"+y).style.backgroundColor = color;
@@ -421,9 +451,11 @@ function movePiece(){
 	
 	if (board.currentPlayer == w){
 		board.currentPlayer = b;
+		window.dispatchEvent(playerSwitch);
 		move(w,this);
 	} else if (board.currentPlayer == b){
 		board.currentPlayer = w;
+		window.dispatchEvent(playerSwitch);
 		move(b,this);
 	}
 	
