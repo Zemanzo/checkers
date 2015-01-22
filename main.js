@@ -12,6 +12,7 @@ var selected, timerInterval;
 var doneSettingUp = new Event('setupDone');
 var playerSwitch = new Event('playerSwitched');
 var boardStart = new Event('boardStarted');
+var pathsFound = new Event('pathsDone');
 
 // Settings
 var board = {
@@ -135,6 +136,7 @@ function startSetup(rowStart,rowEnd,color){
 			board.pieces[rows][i].position.x = rows;
 			board.pieces[rows][i].position.y = i;
 			board.pieces[rows][i].currentPaths = [];
+			board.pieces[rows][i].simpleHits = [];
 			board.pieces[rows][i].landingCells = [];
 			board.pieces[rows][i].selectPiece = function(){
 				//console.log(selected);
@@ -215,11 +217,11 @@ function startSetup(rowStart,rowEnd,color){
 								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){ // If an empty cell is found, color it blue (and addeventlistener etc. etc.)
 									if (getType()){
 										if (a > 0){
-											colorCell(x+a,y+b,null,"moveSimple"); // If type is black, moveSimple can only move DOWN
+											colorCell(x+a,y+b,null,"moveSimple",x,y); // If type is black, moveSimple can only move DOWN
 										}
 									} else {
 										if (a < 0){
-											colorCell(x+a,y+b,null,"moveSimple"); // If type is white, moveSimple can only move UP
+											colorCell(x+a,y+b,null,"moveSimple",x,y); // If type is white, moveSimple can only move UP
 										}
 									}
 								} else if (board.pieces[x+a][y+b].type == antiType){ // If a piece of the other type is found
@@ -304,6 +306,9 @@ function startSetup(rowStart,rowEnd,color){
 									console.log("%c Hit on path "+a+" found at "+caller.currentPaths[a][b].split("_")[0]+","+caller.currentPaths[a][b].split("_")[1],"border-left:rgb(128,0,0) 3px solid;");
 								}
 							}
+							if (p == fp){
+								window.dispatchEvent(pathsFound);
+							}
 						}
 					}
 					
@@ -350,7 +355,7 @@ function startSetup(rowStart,rowEnd,color){
 			Object.observe(board.pieces[rows][i],function(changes){
 				changes.forEach(function(change) {
 					if (change.name == "type"){
-						console.log(change);
+						//console.log(change);
 						var x = change.object.position.x;
 						var y = change.object.position.y;
 						var t = change.object.type;
@@ -398,6 +403,7 @@ function startSetup(rowStart,rowEnd,color){
 
 function clearMoveset(obj){
 	// Clear previous preview
+	//console.log("Cleared last moveset");
 	if (obj){
 		obj.currentPaths = [];
 		obj.landingCells = [];
@@ -412,25 +418,27 @@ function clearMoveset(obj){
 
 var coloredCells;
 coloredCells = [];
-function colorCell(x,y,color,type){
+function colorCell(x,y,color,type,sourceX,sourceY){
+	var cell = document.getElementById(x+"_"+y);
 	if (type == "hit"){
-		document.getElementById(x+"_"+y).style.backgroundColor = color;
-		document.getElementById(x+"_"+y).style.cursor = "pointer";
-		document.getElementById(x+"_"+y).addEventListener("click", movePiece, false);
+		cell.style.backgroundColor = color;
+		cell.style.cursor = "pointer";
+		cell.addEventListener("click", movePiece, false);
 	} else if (type == "moveSimple"){
-		document.getElementById(x+"_"+y).style.backgroundColor = "#99f";
-		document.getElementById(x+"_"+y).style.cursor = "pointer";
-		document.getElementById(x+"_"+y).addEventListener("click", movePiece, false);
-		board.pieces[x][y].landingCells.push(x+"_"+y);
+		cell.style.backgroundColor = "#99f";
+		cell.style.cursor = "pointer";
+		cell.addEventListener("click", movePiece, false);
+		board.pieces[sourceX][sourceY].simpleHits.push(x+"_"+y);
 		console.log("%c Simple hit found and created at "+x+","+y+" ("+type+")","border-left:rgb(0,0,255) 3px solid;");
 	} else if (type == "debug"){
-		document.getElementById(x+"_"+y).style.backgroundColor = color;
+		cell.style.backgroundColor = color;
 	}
 	coloredCells.push(x+"_"+y);
 }
 
 // This function is called when the player clicks an empty spot to move its checkers piece to.
 function movePiece(){
+	console.log("yadayadayada",this);
 	var pos = selected.substring(6).split("_");
 	var movingPiece = document.getElementById(selected);
 	var w = "white";
