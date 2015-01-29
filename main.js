@@ -1,4 +1,4 @@
-/* Checkers by Zemanzo - 2014 */
+/* Checkers by Zemanzo - 2014/2015 */
 
 // Add extensions to this array to enable them!
 var extensions = [
@@ -355,7 +355,7 @@ function startSetup(rowStart,rowEnd,color){
 			Object.observe(board.pieces[rows][i],function(changes){
 				changes.forEach(function(change) {
 					if (change.name == "type"){
-						//console.log(change);
+						console.log("%c Oop, stuff changed so lemme do that","border-left:rgb(255,0,255) 3px solid;",change);
 						var x = change.object.position.x;
 						var y = change.object.position.y;
 						var t = change.object.type;
@@ -374,9 +374,15 @@ function startSetup(rowStart,rowEnd,color){
 						if (t == "null"){ // If the piece type is changed to null, it's removed.
 							element.parentElement.removeChild(element);
 							document.getElementById(x+"_"+y).removeEventListener('click',subSelect,false);
-						} else if (t == "white" || t == "black"){
-							console.log(element);
-							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+t+'" id="piece-'+x+'_'+y+'" class="'+t+'Piece checkersPiece">&nbsp;</div>';
+						} else if (t == "white" || t == "black"){ // If the piece type is a color, we have to update the cell to contain the piece.
+							//console.log(element,x,y);
+							var datatype;
+							if (y == 0 || y == 9){
+								dataType = t+"King";
+							} else {
+								dataType = t;
+							}
+							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+dataType+'" id="piece-'+x+'_'+y+'" class="'+t+'Piece checkersPiece">&nbsp;</div>'; // Add it to the dom
 							function addev(){
 								document.getElementById(x+"_"+y).addEventListener('click',subSelect,false);
 							}
@@ -386,12 +392,6 @@ function startSetup(rowStart,rowEnd,color){
 								}
 							} else {
 								addev();
-							}
-							if (y == 0 || y == 9){
-								movedPiece.style.backgroundImage = "url('crown.png')";
-								element.dataset.type = col+"King";
-							} else {
-								element.dataset.type = col;
 							}
 						}
 					}
@@ -412,6 +412,7 @@ function clearMoveset(obj){
 	for (i = 0; i < coloredCells.length; i++){
 		document.getElementById(coloredCells[i]).style.backgroundColor = "#630";
 		document.getElementById(coloredCells[i]).style.cursor = "auto";
+		delete document.getElementById(coloredCells[i]).dataset.path;
 		document.getElementById(coloredCells[i]).removeEventListener("click", movePiece);
 	}
 }
@@ -441,8 +442,6 @@ function movePiece(){
 	console.log("yadayadayada",this);
 	var pos = selected.substring(6).split("_");
 	var movingPiece = document.getElementById(selected);
-	var w = "white";
-	var b = "black";
 	var path = this.dataset.path;
 	
 	// In case a path was found in the data of the moved piece, remove all hit pieces.
@@ -450,24 +449,39 @@ function movePiece(){
 		console.log("FOUND PATH, WILL REMOVE");
 		console.log(board.pieces[pos[0]][pos[1]].currentPaths[path]);
 		console.log(path);
+		console.log(selected);
 		for (i = 0; i < board.pieces[pos[0]][pos[1]].currentPaths[path].length; i++){
 			var bleh = board.pieces[pos[0]][pos[1]].currentPaths[path][i];
 			meerbleh = bleh.split("_");
 			board.pieces[meerbleh[0]][meerbleh[1]].type = "null";
 		}
 	}
-	
+	move(board.currentPlayer,this);
+}
+
+function endTurn(){
+	var w = "white";
+	var b = "black";
 	if (board.currentPlayer == w){
 		board.currentPlayer = b;
-		window.dispatchEvent(playerSwitch);
-		move(w,this);
 	} else if (board.currentPlayer == b){
 		board.currentPlayer = w;
-		window.dispatchEvent(playerSwitch);
-		move(b,this);
 	}
-	
+	window.dispatchEvent(playerSwitch);
+	console.log("%c It's "+board.currentPlayer+"'s turn.","border-left:rgb(255,0,255) 3px solid; background-color:rgba(255,0,255,.5);");
 	document.getElementById("player").innerHTML = board.currentPlayer;
+	for (x = 0; x < board.size; x++){
+		for (y = 0; y < board.size; y++){
+			if (board.pieces[x][y].type != "null"){
+				board.pieces[x][y].currentPaths = [];
+				board.pieces[x][y].landingCells = [];
+			}
+		}
+	}
+	clearMoveset();
+	selected = "null";
+	board.turns += 1;
+	document.getElementById("turns").innerHTML = board.turns;
 }
 
 function move(col,e){
@@ -478,28 +492,8 @@ function move(col,e){
 		console.log("%c Moving piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+") ","border-left:rgb(255,128,0) 3px solid; background-color:rgba(255,128,0,.5);");
 		board.pieces[s[0]][s[1]].type = "null"; // These call the Object.observe() we made earlier!
 		board.pieces[m[0]][m[1]].type = col;
-		//document.getElementById(selected).parentElement.removeChild(document.getElementById(selected));
-		//document.getElementById(e.id).innerHTML += '<div data-type="'+col+'" id="piece-'+m[0]+'_'+m[1]+'" class="'+col+'Piece checkersPiece">&nbsp;</div>';
-		
-		/*var movedPiece = document.getElementById('piece-'+m[0]+'_'+m[1]);
-		if (m[0] == 0 || m[0] == 9){
-			movedPiece.style.backgroundImage = "url('crown.png')";
-			movedPiece.dataset.type = col+"King";
-		} else {
-			movedPiece.dataset.type = col;
-		}*/
 		// Clean up
-		for (x = 0; x < board.size; x++){
-			for (y = 0; y < board.size; y++){
-				if (board.pieces[x][y].type != "null"){
-					board.pieces[x][y].currentPaths = [];
-					board.pieces[x][y].landingCells = [];
-				}
-			}
-		}
-		clearMoveset();
-		selected = "null";
-		board.turns += 1;
+		endTurn();
 		if (exLoaded("editmode.js")){
 			(!board.editMode.active ? document.getElementById("turns").innerHTML = board.turns : null);
 		}
