@@ -3,7 +3,8 @@
 // Add extensions to this array to enable them!
 var extensions = [
 	//"editmode.js",
-	"AI/ai_stupid.js"
+	"AI/ai_stupid.js",
+	"AI/ai_stupid_copy.js"
 ];
 
 var selected, timerInterval;
@@ -366,6 +367,12 @@ function startSetup(rowStart,rowEnd,color){
 							board[o].pieces.splice(board[o].pieces.indexOf(x+"_"+y),1); // Lovely
 							board[o].currentPieces = (board[o].pieces.length);
 							board[o].lostPieces = 20-(board[o].pieces.length); // 20 is default, make this a variable if board.size changes!!!!
+							if (board[o].currentPieces == 0){
+								document.getElementById("header").innerHTML = inverseColor(o)+" WINS!!!";
+								document.getElementById("header").style.fontSize = "60px";
+								alert(inverseColor(o).toUpperCase()+" WINS!!!");
+								toggleTimer();
+							}
 						}
 						if (o == "null"){
 							board[t].pieces.push(x+"_"+y);
@@ -460,13 +467,7 @@ function movePiece(){
 }
 
 function endTurn(){
-	var w = "white";
-	var b = "black";
-	if (board.currentPlayer == w){
-		board.currentPlayer = b;
-	} else if (board.currentPlayer == b){
-		board.currentPlayer = w;
-	}
+	board.currentPlayer = inverseColor(board.currentPlayer);
 	window.dispatchEvent(playerSwitch);
 	console.log("%c It's "+board.currentPlayer+"'s turn.","border-left:rgb(255,0,255) 3px solid; background-color:rgba(255,0,255,.5);");
 	document.getElementById("player").innerHTML = board.currentPlayer;
@@ -520,6 +521,14 @@ function isOOB(c,d){ // Checks if there actually is a board cell there!
 		}
 	} else {
 		return false;
+	}
+}
+
+function inverseColor(color){
+	if (color == "white"){
+		return "black";
+	} else if (color == "black"){
+		return "white";
 	}
 }
 

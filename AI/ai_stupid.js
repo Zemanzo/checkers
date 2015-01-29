@@ -12,10 +12,11 @@ window.addEventListener("boardStarted",AIMove,false);
 window.addEventListener("playerSwitched",AIMove,false);
 
 function AIMove(){
+	console.log(AIstupid.player);
 	setTimeout(function(){
 		if(board.currentPlayer == AIstupid.player){
 			console.log("%c AI tries moving... ","border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
-AItryMove();
+			AItryMove();
 		}
 	},500);
 }
