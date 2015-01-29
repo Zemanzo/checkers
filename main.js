@@ -287,7 +287,7 @@ function startSetup(rowStart,rowEnd,color){
 								}
 							}
 						} else {
-							console.log("No new hits are found");
+							console.log("No new hits are found",p,fp);
 							// Done processing
 							// Add an eventlistener to all possible landing cells
 							for (a = 0; a < caller.landingCells.length; a++){
@@ -308,6 +308,7 @@ function startSetup(rowStart,rowEnd,color){
 								}
 							}
 							if (p == fp){
+								//console.log("Done finding paths dawg");
 								window.dispatchEvent(pathsFound);
 							}
 						}
@@ -414,6 +415,7 @@ function clearMoveset(obj){
 	if (obj){
 		obj.currentPaths = [];
 		obj.landingCells = [];
+		obj.simpleHits = [];
 	}
 	hitAmount = 0;
 	for (i = 0; i < coloredCells.length; i++){
@@ -479,6 +481,13 @@ function endTurn(){
 			}
 		}
 	}
+	/*for (i = 0; i < board[board.currentPlayer].pieces.length; i++){
+		document.getElementById(board.pieces[board[board.currentPlayer].pieces[i].split("_")[0]][board[board.currentPlayer].pieces[i].split("_")[1]]).addEventListener("click",subSelect,false);
+	}
+	var inv = inverseColor(board.currentPlayer);
+	for (i = 0; i < board[inv].pieces.length; i++){
+		document.getElementById(board.pieces[board[inv].pieces[i].split("_")[0]][board[inv].pieces[i].split("_")[1]]).removeEventListener("click",subSelect,false);
+	}*/
 	clearMoveset();
 	selected = "null";
 	board.turns += 1;
@@ -534,6 +543,12 @@ function inverseColor(color){
 
 function toggleTimer(toggle){
 	(toggle ? timerInterval = setInterval(function(){timer()},1000) : clearInterval(timerInterval));
+}
+
+// randomIntFromInterval, rifi sounds cooler and is easier to type.
+function rifi(min,max)
+{
+    return Math.floor(Math.random()*(max-min+1)+min);
 }
 
 var seconds = 0;
