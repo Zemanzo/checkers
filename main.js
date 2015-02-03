@@ -20,6 +20,7 @@ var board = {
 	size: 10,					// Grid size (10 is default by international checkers rules)
 	currentPlayer: "white",		// Starting player (White is default by international checkers rules)
 	turns: 0,
+	time: "00:00",
 	started: false
 };
 
@@ -35,17 +36,15 @@ board.white = {
 	pieces: []
 };
 
-board.cellSize = (window.innerHeight-70)/(board.size);	// Determine height and width for each board cell to support variable window sizes
+board.cellSize = (window.innerHeight)/(board.size);	// Determine height and width for each board cell to support variable window sizes
 
 function init(){
 	// Create board
 	board.container = document.getElementById("checkersContainer");
 	board.container.style.width = (board.cellSize*board.size)+"px";
-	board.container.style.marginLeft = "-"+(board.cellSize*board.size)/2+"px"; // Center it
 	
-	// Fit header to board
-	document.getElementById("header").style.width = (board.cellSize*board.size)+"px";
-	document.getElementById("header").style.marginLeft = "-"+(board.cellSize*board.size)/2+"px"; // Center it
+	// Fit info next to board
+	document.getElementById("header").style.width = "calc(100% - "+(board.cellSize*board.size)+"px)";
 	
 	// Load extensions when done setting up
 	window.addEventListener("setupDone",function(){
@@ -145,7 +144,7 @@ function startSetup(rowStart,rowEnd,color){
 					board.started = true;
 					window.dispatchEvent(boardStart);
 					document.getElementById("header").style.fontSize = "20px";
-					document.getElementById("header").innerHTML = '<div class="headerInfo" style="width:30%">Current player: <div id="player">White</div></div><div class="headerInfo" style="width:30%; font-size:.9em;">Turn: <span id="turns">0</span><br/>Time playing: <span id="time">00:00</span></div><div class="headerInfo" style="width:40%;">Info per player here</div>';
+					document.getElementById("header").innerHTML = document.getElementById("hiddenheader").innerHTML;
 					// Simple timer (per second)
 					toggleTimer(true);
 				}
@@ -366,8 +365,8 @@ function startSetup(rowStart,rowEnd,color){
 						
 						if (o == "white" || o == "black"){
 							board[o].pieces.splice(board[o].pieces.indexOf(x+"_"+y),1); // Lovely
-							board[o].currentPieces = (board[o].pieces.length);
-							board[o].lostPieces = 20-(board[o].pieces.length); // 20 is default, make this a variable if board.size changes!!!!
+							board[o].currentPieces = document.getElementById(o+"Current").innerHTML = (board[o].pieces.length);
+							board[o].lostPieces = document.getElementById(o+"Lost").innerHTML = 20-(board[o].pieces.length); // 20 is default, make this a variable if board.size changes!!!!
 							if (board[o].currentPieces == 0){
 								document.getElementById("header").innerHTML = inverseColor(o)+" WINS!!!";
 								document.getElementById("header").style.fontSize = "60px";
@@ -463,6 +462,7 @@ function movePiece(){
 			var bleh = board.pieces[pos[0]][pos[1]].currentPaths[path][i];
 			meerbleh = bleh.split("_");
 			board.pieces[meerbleh[0]][meerbleh[1]].type = "null";
+			document.getElementById("moves").innerHTML += "["+pad(board.turns,3)+"] "+board.time+" |<span class='hitLog'>&nbsp;&nbsp;Removing "+inverseColor(board.pieces[pos[0]][pos[1]].type)+" piece ("+meerbleh[0]+","+meerbleh[1]+") hit by ("+pos[0]+","+pos[1]+")</span><br/>";
 		}
 	}
 	move(board.currentPlayer,this);
@@ -499,7 +499,9 @@ function move(col,e){
 		s = selected.split("_");
 		m = e.id.split("_");
 		s[0] = s[0].substring(6);
-		console.log("%c Moving piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+") ","border-left:rgb(255,128,0) 3px solid; background-color:rgba(255,128,0,.5);");
+		console.log("%c Moved piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+") ","border-left:rgb(255,128,0) 3px solid; background-color:rgba(255,128,0,.5);");
+		document.getElementById("moves").innerHTML += "["+pad(board.turns,3)+"] "+board.time+" | Moving "+col+" piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+")<br/>";
+		document.getElementById("moves").scrollTop = document.getElementById("moves").scrollHeight;
 		board.pieces[s[0]][s[1]].type = "null"; // These call the Object.observe() we made earlier!
 		board.pieces[m[0]][m[1]].type = col;
 		// Clean up
@@ -567,6 +569,7 @@ function timer(){
 	} else {
 		zMin = "";
 	}
+	board.time = zMin+minutes+":"+zSec+(seconds%60);
 	document.getElementById("time").innerHTML = zMin+minutes+":"+zSec+(seconds%60);
 }
 
@@ -574,4 +577,9 @@ function exLoaded(file){
 	if (extensions.indexOf(file) != -1){
 		return true;
 	}
+}
+
+function pad(num, size) {
+    var s = "000000000" + num;
+    return s.substr(s.length-size);
 }

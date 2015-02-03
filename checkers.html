@@ -7,12 +7,40 @@
 		<script src="main.js"></script>
 	</head>
 	<body onload="init();">
-		<div>
-			<div id="header">
-				Checkers 
-				<div style="font-size:12px;">A javascript checkers game by Zemanzo</div>
+		<div id="checkersContainer"></div>
+		<div id="header">
+			Checkers 
+			<div style="font-size:1vw;">A javascript checkers game by Zemanzo</div>
+		</div>
+		<div id="hiddenheader" style="display:none;">
+			<div style="width:100%;">
+				<div class="headerInfo">
+					Current player: <div id="player">White</div>
+				</div>
+				<div class="headerInfo" style="box-sizing:border-box; padding-right:10px; font-size:2vw !important; text-align:left;">
+					Turn: <span id="turns">0</span>
+					<br/>Time playing: <span id="time">00:00</span>
+				</div>
 			</div>
-			<div id="checkersContainer"></div>
+			<div style="width:100%; text-align:left;" id="pieceInfo">
+				<div class="headerInfo">
+					White
+					<br/>Current:<span id="whiteCurrent">20</span>
+					<br/>Lost:<span id="whiteLost">0</span>
+				</div>
+				<div class="headerInfo">
+					Black
+					<br/>Current:<span id="blackCurrent">20</span>
+					<br/>Lost:<span id="blackLost">0</span>
+				</div>
+				<div class="headerInfo" style="float:right">
+					Total
+					<br/>Current:<span id="totalCurrent">N/A</span>
+					<br/>Lost:<span id="totalLost">N/A</span>
+				</div>
+			</div>
+			<div id="moves">
+			</div>
 		</div>
 	</body>
 </html>

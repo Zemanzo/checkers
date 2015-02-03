@@ -11,7 +11,7 @@ var AIstupid = {
 				console.log("%c AI ("+AIstupid.player+") tries moving... ","border-left:rgb(90,255,90) 3px solid; background-color:rgba(90,255,90,.5);");
 				AIstupid.AItryMove();
 			}
-		},500);
+		},100);
 	},
 	AItryMove: function(){
 		var randomPiecePos = board[AIstupid.player].pieces[rifi(0,board[AIstupid.player].pieces.length-1)].split("_");
@@ -35,9 +35,11 @@ var AIstupid = {
 			}
 			console.log("%c AI moving "+AIstupid.randomPiece.x+"_"+AIstupid.randomPiece.y,"border-left:rgb(90,255,90) 3px solid;");
 		} else {
-			setTimeout(function(){
-				AIstupid.AItryMove();
-			},100);
+			if (board.currentPlayer == AIstupid.player){
+				setTimeout(function(){
+					AIstupid.AItryMove();
+				},100);
+			}
 		}
 	}
 }
