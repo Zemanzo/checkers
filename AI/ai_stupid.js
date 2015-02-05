@@ -25,12 +25,12 @@ var AIstupid = {
 		//console.log(p,"blah")
 		if(p.landingCells.length != 0){
 			var randomArrayValue = rifi(0,p.landingCells.length-1);
-			if (board.currentPlayer == AIstupid.player){
-				movePiece.call(document.getElementById(p.landingCells[randomArrayValue][rifi(0,p.landingCells[randomArrayValue].length-1)].split("_")[0]+"_"+p.landingCells[randomArrayValue][rifi(0,p.landingCells[randomArrayValue].length-1)].split("_")[1]));
+			if (board.currentPlayer == AIstupid.player && selected != "null"){
+				movePiece.call(document.getElementById(p.landingCells[randomArrayValue][rifi(0,p.landingCells[randomArrayValue].length-1)].split("_")[0]+"_"+p.landingCells[randomArrayValue][rifi(0,p.landingCells[randomArrayValue].length-1)].split("_")[1])); // God I love this shit. Pretty much what this does is call the movePiece() function with selecting a random spot to land. The function itself requires a THIS keyword that is normally acuired by the click event.
 			}
 			console.log("%c AI moving "+AIstupid.randomPiece.x+"_"+AIstupid.randomPiece.y,"border-left:rgb(90,255,90) 3px solid;");
 		} else if(p.simpleHits.length != 0) {
-			if (board.currentPlayer == AIstupid.player){
+			if (board.currentPlayer == AIstupid.player && selected != "null"){
 				movePiece.call(document.getElementById(p.simpleHits[rifi(0,p.landingCells.length-1)].split("_")[0]+"_"+p.simpleHits[rifi(0,p.landingCells.length-1)].split("_")[1]));
 			}
 			console.log("%c AI moving "+AIstupid.randomPiece.x+"_"+AIstupid.randomPiece.y,"border-left:rgb(90,255,90) 3px solid;");

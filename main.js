@@ -132,6 +132,7 @@ function startSetup(rowStart,rowEnd,color){
 			*/
 			board.pieces[rows][i] = {};
 			board.pieces[rows][i].type = pieceSet;
+			board.pieces[rows][i].king = false;
 			board.pieces[rows][i].position = {};
 			board.pieces[rows][i].position.x = rows;
 			board.pieces[rows][i].position.y = i;
@@ -350,7 +351,8 @@ function startSetup(rowStart,rowEnd,color){
 			/*
 				Listen for changes with Object.observe().
 				This allows us to only change the board.pieces arrays and make the rest (I.E. moving the actual pieces in the HTML) happen automatically!
-				Object.observe() is still a very new function to JavaScript and DOES NOT WORK FOR FIREFOX, SAFARI AND IE or older browsers.
+				Object.observe() is still a very new function to JavaScript and DOES NOT WORK FOR FIREFOX, SAFARI AND IE or older browsers. It IS natively
+				supported in Google Chrome and Opera!
 				No fall-back support is implemented in this script!
 			*/
 			Object.observe(board.pieces[rows][i],function(changes){
@@ -383,13 +385,15 @@ function startSetup(rowStart,rowEnd,color){
 							document.getElementById(x+"_"+y).removeEventListener('click',subSelect,false);
 						} else if (t == "white" || t == "black"){ // If the piece type is a color, we have to update the cell to contain the piece.
 							//console.log(element,x,y);
-							var datatype;
-							if (y == 0 || y == 9){
+							var dataType;
+							if ((t == "black" && y == 0) || (t == "white" && y == 9)){
 								dataType = t+"King";
+								board.pieces[x][y].king = true;
 							} else {
 								dataType = t;
 							}
 							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+dataType+'" id="piece-'+x+'_'+y+'" class="'+t+'Piece checkersPiece">&nbsp;</div>'; // Add it to the dom
+							
 							function addev(){
 								document.getElementById(x+"_"+y).addEventListener('click',subSelect,false);
 							}
@@ -500,7 +504,7 @@ function move(col,e){
 		m = e.id.split("_");
 		s[0] = s[0].substring(6);
 		console.log("%c Moved piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+") ","border-left:rgb(255,128,0) 3px solid; background-color:rgba(255,128,0,.5);");
-		document.getElementById("moves").innerHTML += "["+pad(board.turns,3)+"] "+board.time+" | Moving "+col+" piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+")<br/>";
+		document.getElementById("moves").innerHTML += "<span onmouseover='drawPath(true,this);' onmouseout='drawPath(false,this);' data-type='"+col+"' data-origin='"+s[0]+"_"+s[1]+"' data-destination='"+m[0]+"_"+m[1]+"'>["+pad(board.turns,3)+"] "+board.time+" | Moving "+col+" piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+")</span><br/>";
 		document.getElementById("moves").scrollTop = document.getElementById("moves").scrollHeight;
 		board.pieces[s[0]][s[1]].type = "null"; // These call the Object.observe() we made earlier!
 		board.pieces[m[0]][m[1]].type = col;
@@ -582,4 +586,50 @@ function exLoaded(file){
 function pad(num, size) {
     var s = "000000000" + num;
     return s.substr(s.length-size);
+}
+
+function drawPath(show,el){
+	if (show){
+		// Initialise canvas
+		var canvas = document.getElementById("overlay");
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+		canvas.style.display = "inline";
+		var context = canvas.getContext("2d");
+		var offset = (board.cellSize/2);
+		var pos1 = el.dataset.origin.split("_");
+		var pos2 = el.dataset.destination.split("_");
+		var startpos = [(pos1[1]*board.cellSize)+offset,(pos1[0]*board.cellSize)+offset];
+		var endpos = [(pos2[1]*board.cellSize)+offset,(pos2[0]*board.cellSize)+offset];
+		var col = el.dataset.type;
+		if (col == "white"){
+			col = "#ffffff";
+		}
+		if (col == "black"){
+			col = "#000000";
+		}
+		context.strokeStyle = "#ff0000";
+		context.lineWidth = 4;
+		context.beginPath();
+		// Draw starting position circle
+			//context.setLineDash([16]);
+			/*context.moveTo(startpos[0],startpos[1]);
+			context.arc(startpos[0],startpos[1], 20, 0, 2*Math.PI, false);
+			context.fillStyle = "rgba(255, 0, 0, 0.5)";
+			context.fill();*/
+		// Draw red circle with moved piece in the middle
+			//context.setLineDash([]);
+			context.moveTo(endpos[0],endpos[1]);
+			context.arc(endpos[0],endpos[1], 20, 0, 2*Math.PI, false);
+			context.fillStyle = col;
+			context.fill();
+		// Draw the moved path (w/o hits or bounce cells!)
+			context.moveTo(startpos[0],startpos[1]);
+			context.lineTo(endpos[0],endpos[1]);
+		context.stroke();
+	} else {
+		el.style.backgroundColor = "transparent";
+		document.getElementById("overlay").style.display = "none";
+		document.getElementById("overlay").width = document.getElementById("overlay").width;
+	}
 }

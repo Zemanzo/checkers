@@ -70,7 +70,7 @@ body {
 	font-size:40px;
 }
 
-body .boardCell:nth-child(even) {
+body .boardCell:nth-child(odd) {
 	background-color:#630;
 }
 
@@ -105,10 +105,25 @@ body .boardCell:nth-child(even) {
 	overflow-y:scroll;
 }
 
+#moves span:hover {
+	background-color:rgba(255,128,0,.5);
+}
+
 #turns, #time {
 	float:right;
 }
 
 .hitLog {
 	color:#d00;
+}
+
+canvas {
+	position:absolute;
+	top:0px;
+	left:0px;
+	z-index:5;
+	height:100%;
+	width:100%;
+	display:none;
+	/*background-color:rgba(255,255,255,.5);*/
 }
