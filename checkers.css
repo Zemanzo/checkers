@@ -76,6 +76,7 @@ body .boardCell:nth-child(odd) {
 
 .blackPiece {
 	background-color:#000;
+	color:#fff;
 }
 
 .whitePiece {
@@ -89,6 +90,7 @@ body .boardCell:nth-child(odd) {
 	top:8px;
 	cursor:pointer;
 	box-sizing: border-box;
+	text-align:center;
 }
 
 #moves {

@@ -67,6 +67,7 @@ function init(){
 		width: '+(board.cellSize-16)+'px;\
 		height: '+(board.cellSize-16)+'px;\
 		border-radius: '+((board.cellSize-16)/2)+'px;\
+		padding: '+((board.cellSize-16)/4)+'px;\
 	}\
 	\
 	';
@@ -216,12 +217,18 @@ function startSetup(rowStart,rowEnd,color){
 							if (isOOB((x+a),(y+b))){ // Check if next position is not out of bounds
 								var antiType = ( ( getType() ) ? "white" : "black");
 								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){ // If an empty cell is found, color it blue (and addeventlistener etc. etc.)
-									if (getType()){
-										if (a > 0){
+									if (board.pieces[x][y].king){
+										for (ind = x; ind < board.size; ind++){
+											if (isOOB((x+(a*2*ind)),(y+(b*2*ind)))){
+												colorCell(x+(a*2*ind),y+(b*2*ind),null,"moveSimple",x,y);
+											}
+										}
+									} else if (getType()){
+										if (a > 0 && !board.pieces[x][y].king){
 											colorCell(x+a,y+b,null,"moveSimple",x,y); // If type is black, moveSimple can only move DOWN
 										}
 									} else {
-										if (a < 0){
+										if (a < 0 && !board.pieces[x][y].king){
 											colorCell(x+a,y+b,null,"moveSimple",x,y); // If type is white, moveSimple can only move UP
 										}
 									}
@@ -385,14 +392,16 @@ function startSetup(rowStart,rowEnd,color){
 							document.getElementById(x+"_"+y).removeEventListener('click',subSelect,false);
 						} else if (t == "white" || t == "black"){ // If the piece type is a color, we have to update the cell to contain the piece.
 							//console.log(element,x,y);
-							var dataType;
-							if ((t == "black" && y == 0) || (t == "white" && y == 9)){
+							var dataType,inside;
+							if ((t == "black" && x == 9) || (t == "white" && x == 0)){
 								dataType = t+"King";
+								inside = "K";
 								board.pieces[x][y].king = true;
 							} else {
+								inside = "&nbsp;";
 								dataType = t;
 							}
-							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+dataType+'" id="piece-'+x+'_'+y+'" class="'+t+'Piece checkersPiece">&nbsp;</div>'; // Add it to the dom
+							document.getElementById(x+"_"+y).innerHTML += '<div data-type="'+dataType+'" id="piece-'+x+'_'+y+'" class="'+t+'Piece checkersPiece">'+inside+'</div>'; // Add it to the dom
 							
 							function addev(){
 								document.getElementById(x+"_"+y).addEventListener('click',subSelect,false);
@@ -506,8 +515,9 @@ function move(col,e){
 		console.log("%c Moved piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+") ","border-left:rgb(255,128,0) 3px solid; background-color:rgba(255,128,0,.5);");
 		document.getElementById("moves").innerHTML += "<span onmouseover='drawPath(true,this);' onmouseout='drawPath(false,this);' data-type='"+col+"' data-origin='"+s[0]+"_"+s[1]+"' data-destination='"+m[0]+"_"+m[1]+"'>["+pad(board.turns,3)+"] "+board.time+" | Moving "+col+" piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+")</span><br/>";
 		document.getElementById("moves").scrollTop = document.getElementById("moves").scrollHeight;
-		board.pieces[s[0]][s[1]].type = "null"; // These call the Object.observe() we made earlier!
+		// These below call the Object.observe() we made earlier!
 		board.pieces[m[0]][m[1]].type = col;
+		board.pieces[s[0]][s[1]].type = "null";
 		// Clean up
 		endTurn();
 		if (exLoaded("editmode.js")){
