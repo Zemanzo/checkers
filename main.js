@@ -3,8 +3,8 @@
 // Add extensions to this array to enable them!
 var extensions = [
 	//"editmode.js",
-	"AI/ai_stupid.js",
-	"AI/ai_stupid_copy.js"
+	//"AI/ai_stupid.js",
+	//"AI/ai_stupid_copy.js"
 ];
 
 var selected, timerInterval;
@@ -178,6 +178,7 @@ function startSetup(rowStart,rowEnd,color){
 				var x = this.position.x;
 				var y = this.position.y;
 				var type = this.type;
+				var king = false;
 				console.log("%c Getting new moveset for "+x+","+y+" ("+type+") ","border-left:rgb(255,0,0) 3px solid; background-color:rgba(255,0,0,.5);");
 				var caller = this;
 				var possibleHits = [];
@@ -212,23 +213,74 @@ function startSetup(rowStart,rowEnd,color){
 						
 						These arrays will then be used to further process paths and hits. This happens after the for-loop. 
 					*/
+					var didHit = false;
 					for (a = -1; a <= 1; a += 2){ // Look around the current piece
 						for (b = -1; b <= 1; b += 2){ // for pieces of the other type
 							if (isOOB((x+a),(y+b))){ // Check if next position is not out of bounds
 								var antiType = ( ( getType() ) ? "white" : "black");
-								if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){ // If an empty cell is found, color it blue (and addeventlistener etc. etc.)
-									if (board.pieces[x][y].king){
-										for (ind = x; ind < board.size; ind++){
-											if (isOOB((x+(a*2*ind)),(y+(b*2*ind)))){
-												colorCell(x+(a*2*ind),y+(b*2*ind),null,"moveSimple",x,y);
+								if (board.pieces[x][y].king || king){ // If the piece in question is a king
+									if (hitIteration == 0){
+										king = true;
+										for (ind = 1; ind < board.size; ind++){ // For all directions as big as the board
+											var pos = [(x+(a*ind)),(y+(b*ind))]
+											console.log(pos);
+											if (isOOB(pos[0],pos[1])){
+												if (board.pieces[pos[0]][pos[1]].type == "null" && !didHit){ // If cell in empty and nothing has been hit yet, add a simple move
+													colorCell(pos[0],pos[1],null,"moveSimple",x,y);
+												} else if (board.pieces[pos[0]][pos[1]].type == type) { // If there's a piece of the same player, stop any further checking, no further moves possible in that direction.
+													break;
+												} else {
+													if (isOOB(x+(a*(ind+1)),y+(b*(ind+1)))){
+														if ((board.pieces[pos[0]][pos[1]].type == antiType && board.pieces[(x+(a*(ind+1)))][(y+(b*(ind+1)))].type == antiType)){ // If there's two of the other player in a row, stop any further checking, no further moves possible in that direction.
+															break;
+														} else if ((board.pieces[pos[0]][pos[1]].type == antiType && board.pieces[(x+(a*(ind+1)))][(y+(b*(ind+1)))].type == "null")){ // In all the other cases, brace yourselves, there's a lot of hits to be checked.
+															if (!didHit){
+																possibleHits.push(pos[0]+"_"+pos[1]);
+																didHit = true;
+															}
+															if (board.pieces[pos[0]][pos[1]].type == "null"){
+																console.log(x+(a*ind),y+(b*ind));
+																tempNext.push(x+(a*ind));		
+																tempNext.push(y+(b*ind));
+															}
+														}
+													}
+												}
 											}
 										}
-									} else if (getType()){
-										if (a > 0 && !board.pieces[x][y].king){
+									} else {
+										for (ind = 1; ind < board.size; ind++){ // For all directions as big as the board
+											var pos = [(x+(a*ind)),(y+(b*ind))]
+											console.log(pos);
+											if (isOOB(pos[0],pos[1])){
+												if (board.pieces[pos[0]][pos[1]].type == type) { // If there's a piece of the same player, stop any further checking, no further moves possible in that direction.
+													break;
+												} else {
+													if (isOOB(x+(a*(ind+1)),y+(b*(ind+1)))){
+														if ((board.pieces[pos[0]][pos[1]].type == antiType && board.pieces[(x+(a*(ind+1)))][(y+(b*(ind+1)))].type == antiType)){ // If there's two of the other player in a row, stop any further checking, no further moves possible in that direction.
+															break;
+														}
+													} else { // In all the other cases, brace yourselves, there's a lot of hits to be checked.
+														if (!didHit){
+															possibleHits.push(pos[0]+"_"+pos[1]);
+															didHit = true;
+														}
+														if (board.pieces[pos[0]][pos[1]].type == "null" && didHit){
+															tempNext[2*p+(possibleHits.length-1)*2] = x+((a*ind));
+															tempNext[2*p+(possibleHits.length-1)*2+1] = y+((b*ind));
+														}
+													}
+												}
+											}
+										}
+									}
+								} else if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){ // If an empty cell is found, color it blue (and addeventlistener etc. etc.)
+									if (getType()){ // If it's not a king, proceed checking for simple hits.
+										if (a > 0){
 											colorCell(x+a,y+b,null,"moveSimple",x,y); // If type is black, moveSimple can only move DOWN
 										}
 									} else {
-										if (a < 0 && !board.pieces[x][y].king){
+										if (a < 0){
 											colorCell(x+a,y+b,null,"moveSimple",x,y); // If type is white, moveSimple can only move UP
 										}
 									}
@@ -273,7 +325,7 @@ function startSetup(rowStart,rowEnd,color){
 						}
 						if (possibleHits.length > 0 /*&& hitIteration == 0*/){
 							for (p = 0; p < caller.currentPaths.length; p++){	// For every current path
-								//console.log("tempNext before nextMove (",p,") = ",tempNext);
+								console.log("tempNext before nextMove (",p,") = ",tempNext);
 								nextMove[p] = {									// Another array for the position of the next iteration
 									x:tempNext[2*p],
 									y:tempNext[2*p+1]
@@ -377,8 +429,8 @@ function startSetup(rowStart,rowEnd,color){
 							board[o].currentPieces = document.getElementById(o+"Current").innerHTML = (board[o].pieces.length);
 							board[o].lostPieces = document.getElementById(o+"Lost").innerHTML = 20-(board[o].pieces.length); // 20 is default, make this a variable if board.size changes!!!!
 							if (board[o].currentPieces == 0){
-								document.getElementById("header").innerHTML = inverseColor(o)+" WINS!!!";
-								document.getElementById("header").style.fontSize = "60px";
+								/*document.getElementById("header").innerHTML = inverseColor(o)+" WINS!!!";
+								document.getElementById("header").style.fontSize = "60px";*/
 								alert(inverseColor(o).toUpperCase()+" WINS!!!");
 								toggleTimer();
 							}
@@ -391,9 +443,9 @@ function startSetup(rowStart,rowEnd,color){
 							element.parentElement.removeChild(element);
 							document.getElementById(x+"_"+y).removeEventListener('click',subSelect,false);
 						} else if (t == "white" || t == "black"){ // If the piece type is a color, we have to update the cell to contain the piece.
-							//console.log(element,x,y);
+							console.log(element,x,y);
 							var dataType,inside;
-							if ((t == "black" && x == 9) || (t == "white" && x == 0)){
+							if ((t == "black" && x == 9) || (t == "white" && x == 0) || document.getElementById(x+"_"+y).dataset.king == "true"){ // If position is at the very top or bottom (and the right color), make the piece a king
 								dataType = t+"King";
 								inside = "K";
 								board.pieces[x][y].king = true;
@@ -508,28 +560,32 @@ function endTurn(){
 }
 
 function move(col,e){
-		var s,m;
-		s = selected.split("_");
-		m = e.id.split("_");
-		s[0] = s[0].substring(6);
-		console.log("%c Moved piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+") ","border-left:rgb(255,128,0) 3px solid; background-color:rgba(255,128,0,.5);");
-		document.getElementById("moves").innerHTML += "<span onmouseover='drawPath(true,this);' onmouseout='drawPath(false,this);' data-type='"+col+"' data-origin='"+s[0]+"_"+s[1]+"' data-destination='"+m[0]+"_"+m[1]+"'>["+pad(board.turns,3)+"] "+board.time+" | Moving "+col+" piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+")</span><br/>";
-		document.getElementById("moves").scrollTop = document.getElementById("moves").scrollHeight;
-		// These below call the Object.observe() we made earlier!
-		board.pieces[m[0]][m[1]].type = col;
-		board.pieces[s[0]][s[1]].type = "null";
-		// Clean up
-		endTurn();
-		if (exLoaded("editmode.js")){
-			(!board.editMode.active ? document.getElementById("turns").innerHTML = board.turns : null);
-		}
+	var s,m;
+	s = selected.split("_"); // Old location
+	m = e.id.split("_"); // New location
+	s[0] = s[0].substring(6);
+	console.log("%c Moved piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+") ","border-left:rgb(255,128,0) 3px solid; background-color:rgba(255,128,0,.5);");
+	document.getElementById("moves").innerHTML += "<span onmouseover='drawPath(true,this);' onmouseout='drawPath(false,this);' data-type='"+col+"' data-origin='"+s[0]+"_"+s[1]+"' data-destination='"+m[0]+"_"+m[1]+"'>["+pad(board.turns,3)+"] "+board.time+" | Moving "+col+" piece ("+s[0]+","+s[1]+") to ("+m[0]+","+m[1]+")</span><br/>"; // Add move to log
+	document.getElementById("moves").scrollTop = document.getElementById("moves").scrollHeight; // Scroll down with log being generated
+	// These below call the Object.observe() we made earlier!
+	if (board.pieces[s[0]][s[1]].king){
+		document.getElementById(m[0]+"_"+m[1]).dataset.king = "true";
+	}
+	document.getElementById(s[0]+"_"+s[1]).dataset.king = "false";
+	board.pieces[s[0]][s[1]].type = "null";
+	board.pieces[m[0]][m[1]].type = col;
+	// Clean up
+	endTurn();
+	if (exLoaded("editmode.js")){
+		(!board.editMode.active ? document.getElementById("turns").innerHTML = board.turns : null);
+	}
 }
 
 function subSelect(){
 	board.pieces[this.id.substring(0,1)][this.id.substring(2)].selectPiece();
 }
 
-function isEven(number){
+function isEven(number){ // Checks exactly what it says on the tin
 	if (number % 2 == 0){
 		return 1;
 	} else {
@@ -641,5 +697,11 @@ function drawPath(show,el){
 		el.style.backgroundColor = "transparent";
 		document.getElementById("overlay").style.display = "none";
 		document.getElementById("overlay").width = document.getElementById("overlay").width;
+	}
+}
+
+function removePieces(list){
+	for (i = 0; i < list.length; i += 2){
+		board.pieces[list[i]][list[i+1]].type = "null";
 	}
 }

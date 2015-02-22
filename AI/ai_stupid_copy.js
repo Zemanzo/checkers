@@ -26,12 +26,14 @@ var AIstupidcopy = {
 		if(p.landingCells.length != 0){
 			var randomArrayValue = rifi(0,p.landingCells.length-1);
 			if (board.currentPlayer == AIstupidcopy.player && selected != "null"){
-				movePiece.call(document.getElementById(p.landingCells[randomArrayValue][rifi(0,p.landingCells[randomArrayValue].length-1)].split("_")[0]+"_"+p.landingCells[randomArrayValue][rifi(0,p.landingCells[randomArrayValue].length-1)].split("_")[1]));
+				var notsocoolandlonganymore = p.landingCells[randomArrayValue][rifi(0,p.landingCells[randomArrayValue].length-1)].split("_");
+				movePiece.call(document.getElementById(notsocoolandlonganymore[0]+"_"+notsocoolandlonganymore[1]));
 			}
 			console.log("%c AI moving "+AIstupidcopy.randomPiece.x+"_"+AIstupidcopy.randomPiece.y,"border-left:rgb(90,255,90) 3px solid;");
 		} else if(p.simpleHits.length != 0) {
 			if (board.currentPlayer == AIstupidcopy.player && selected != "null"){
-				movePiece.call(document.getElementById(p.simpleHits[rifi(0,p.landingCells.length-1)].split("_")[0]+"_"+p.simpleHits[rifi(0,p.landingCells.length-1)].split("_")[1]));
+				var alsonotlongandcool = p.simpleHits[rifi(0,p.landingCells.length-1)].split("_");
+				movePiece.call(document.getElementById(alsonotlongandcool[0]+"_"+alsonotlongandcool[1]));
 			}
 			console.log("%c AI moving "+AIstupidcopy.randomPiece.x+"_"+AIstupidcopy.randomPiece.y,"border-left:rgb(90,255,90) 3px solid;");
 		} else {
