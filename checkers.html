@@ -43,6 +43,16 @@
 			</div>
 			<div id="moves">
 			</div>
+			<div style="position: absolute; bottom:10px; right:10px;">
+				<input type="number" min="0" max="9" id="setX" value="0" onclick="this.select()"/>
+				<input type="number" min="0" max="9" id="setY" value="0" onclick="this.select()"/>
+				<select id="setType">
+					<option value="white">White</option>
+					<option value="black">Black</option>
+					<option value="null">Null</option>
+				</select>
+				<button onclick='board.pieces[parseInt(document.getElementById("setX").value)][parseInt(document.getElementById("setY").value)].type = document.getElementById("setType").value;'>SET</button>
+			</div>
 		</div>
 	</body>
 </html>

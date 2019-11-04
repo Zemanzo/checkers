@@ -21,7 +21,8 @@ var board = {
 	currentPlayer: "white",		// Starting player (White is default by international checkers rules)
 	turns: 0,
 	time: "00:00",
-	started: false
+	started: false,
+	showCoordinates: false
 };
 
 board.black = {
@@ -76,7 +77,13 @@ function init(){
 	// Create board cells
 	for (x = 0; x < board.size; x++){
 		for (y = 0; y < board.size; y++){
-			board.container.innerHTML += '<div class="boardCell" id="'+x+'_'+y+'">'+x+'_'+y+'</div>';
+			var coords;
+			if (board.showCoordinates){
+				coords = x+'_'+y;
+			} else {
+				coords = "&nbsp;";
+			}
+			board.container.innerHTML += '<div class="boardCell" id="'+x+'_'+y+'">'+coords+'</div>';
 		}
 		board.container.innerHTML += '<br/>';
 	}
@@ -213,9 +220,9 @@ function startSetup(rowStart,rowEnd,color){
 						
 						These arrays will then be used to further process paths and hits. This happens after the for-loop. 
 					*/
-					var didHit = false;
 					for (a = -1; a <= 1; a += 2){ // Look around the current piece
 						for (b = -1; b <= 1; b += 2){ // for pieces of the other type
+							var didHit = false;
 							if (isOOB((x+a),(y+b))){ // Check if next position is not out of bounds
 								var antiType = ( ( getType() ) ? "white" : "black");
 								if (board.pieces[x][y].king || king){ // If the piece in question is a king
@@ -223,10 +230,15 @@ function startSetup(rowStart,rowEnd,color){
 										king = true;
 										for (ind = 1; ind < board.size; ind++){ // For all directions as big as the board
 											var pos = [(x+(a*ind)),(y+(b*ind))]
-											console.log(pos);
+											//console.log(pos);
 											if (isOOB(pos[0],pos[1])){
 												if (board.pieces[pos[0]][pos[1]].type == "null" && !didHit){ // If cell in empty and nothing has been hit yet, add a simple move
 													colorCell(pos[0],pos[1],null,"moveSimple",x,y);
+												} else if (isOOB(x+(a*(ind+1)),y+(b*(ind+1))) && didHit){
+													if (board.pieces[x+(a*(ind+1))][y+(b*(ind+1))].type == "null"){
+														tempNext.push(x+(a*(ind+1)));		
+														tempNext.push(y+(b*(ind+1)));
+													}
 												} else if (board.pieces[pos[0]][pos[1]].type == type) { // If there's a piece of the same player, stop any further checking, no further moves possible in that direction.
 													break;
 												} else {
@@ -234,21 +246,22 @@ function startSetup(rowStart,rowEnd,color){
 														if ((board.pieces[pos[0]][pos[1]].type == antiType && board.pieces[(x+(a*(ind+1)))][(y+(b*(ind+1)))].type == antiType)){ // If there's two of the other player in a row, stop any further checking, no further moves possible in that direction.
 															break;
 														} else if ((board.pieces[pos[0]][pos[1]].type == antiType && board.pieces[(x+(a*(ind+1)))][(y+(b*(ind+1)))].type == "null")){ // In all the other cases, brace yourselves, there's a lot of hits to be checked.
+															console.log(pos);
 															if (!didHit){
 																possibleHits.push(pos[0]+"_"+pos[1]);
 																didHit = true;
 															}
-															if (board.pieces[pos[0]][pos[1]].type == "null"){
+															//if (board.pieces[pos[0]][pos[1]].type == "null"){
 																console.log(x+(a*ind),y+(b*ind));
-																tempNext.push(x+(a*ind));		
-																tempNext.push(y+(b*ind));
-															}
+																tempNext.push(x+(a*(ind+1)));		
+																tempNext.push(y+(b*(ind+1)));
+															//}
 														}
 													}
 												}
 											}
 										}
-									} else {
+									} /* else {
 										for (ind = 1; ind < board.size; ind++){ // For all directions as big as the board
 											var pos = [(x+(a*ind)),(y+(b*ind))]
 											console.log(pos);
@@ -256,24 +269,26 @@ function startSetup(rowStart,rowEnd,color){
 												if (board.pieces[pos[0]][pos[1]].type == type) { // If there's a piece of the same player, stop any further checking, no further moves possible in that direction.
 													break;
 												} else {
+													//console.log(x+(a*(ind+1)),y+(b*(ind+1)));
 													if (isOOB(x+(a*(ind+1)),y+(b*(ind+1)))){
-														if ((board.pieces[pos[0]][pos[1]].type == antiType && board.pieces[(x+(a*(ind+1)))][(y+(b*(ind+1)))].type == antiType)){ // If there's two of the other player in a row, stop any further checking, no further moves possible in that direction.
+														if ((board.pieces[pos[0]][pos[1]].type == antiType && board.pieces[(x+(a*(ind+1)))][(y+(b*(ind+1)))].type != "null") || board.pieces[pos[0]][pos[1]].type == type){ // If there's two pieces in a row or one of the same type, stop any further checking, no further moves possible in that direction.
 															break;
-														}
-													} else { // In all the other cases, brace yourselves, there's a lot of hits to be checked.
-														if (!didHit){
-															possibleHits.push(pos[0]+"_"+pos[1]);
-															didHit = true;
-														}
-														if (board.pieces[pos[0]][pos[1]].type == "null" && didHit){
-															tempNext[2*p+(possibleHits.length-1)*2] = x+((a*ind));
-															tempNext[2*p+(possibleHits.length-1)*2+1] = y+((b*ind));
+														} else if (possibleHits.indexOf(pos[0]+"_"+pos[1]) == -1){ // Make sure we're not hitting a previously hit piece again
+															console.log("HIT!:",pos);
+															if (!didHit){
+																possibleHits.push(pos[0]+"_"+pos[1]);
+																didHit = true;
+															}
+															//if (board.pieces[pos[0]][pos[1]].type == "null" && didHit){
+																tempNext[2*p+(possibleHits.length-1)*2] = x+((a*ind));
+																tempNext[2*p+(possibleHits.length-1)*2+1] = y+((b*ind));
+															//}
 														}
 													}
 												}
 											}
 										}
-									}
+									} */
 								} else if (board.pieces[x+a][y+b].type == "null" && hitIteration == 0){ // If an empty cell is found, color it blue (and addeventlistener etc. etc.)
 									if (getType()){ // If it's not a king, proceed checking for simple hits.
 										if (a > 0){
@@ -701,7 +716,15 @@ function drawPath(show,el){
 }
 
 function removePieces(list){
-	for (i = 0; i < list.length; i += 2){
-		board.pieces[list[i]][list[i+1]].type = "null";
+	if (list == "all"){
+		for (x = 0; x < board.size; x++){
+			for (y = 0; y < board.size; y++){
+				board.pieces[x][y].type = "null";	
+			}
+		}
+	} else {
+		for (i = 0; i < list.length; i += 2){
+			board.pieces[list[i]][list[i+1]].type = "null";
+		}
 	}
 }
